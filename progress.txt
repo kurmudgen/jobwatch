@@ -216,3 +216,42 @@ Open items:
 - Supabase "Support Engineer (EMEA - Weekends)" passes the US-remote filter because
   its location field says "Remote, Global" while the title says EMEA. Filter is
   behaving as specified; the posting is mislabelled at the source.
+
+## 2026-09-03 — USAJOBS source
+
+26. USAJOBS added. 4 searches/poll (2210 + each keyword + RemoteIndicator=True +
+    PayGradeLow=11), deduped on URL. USAJOBS_EMAIL/USAJOBS_KEY from .env, in
+    .env.example, never committed. Missing creds -> clear error, isolated by
+    collect(), reported in the digest's failed-sources list.
+27. Federal (USAJOBS) digest section in both markdown and HTML, sorted by salary
+    max desc, unpublished salaries last. Not tiered; counted in the total.
+28. Schema gained salary_min/salary_max (None for other sources).
+29. 178 tests passing.
+
+### Three bugs the pipeline run exposed (none would show in a unit test alone)
+- The include list CANNOT gate federal postings. Real 2210 titles are "IT
+  Specialist (CUSTSPT)", "(APPSW)", "(INFOSEC)" - no "engineer" anywhere, so the
+  private-sector keywords matched 1 of 4 fixture rows and none of the common real
+  titles. Would have fetched hundreds and silently dropped nearly all. Fix: for
+  source==usajobs the API query is the include gate (filters.FEDERAL_SOURCE);
+  exclusions, on-site rule and flags still apply, matched_in="usajobs query".
+- Salary was lost through SQLite - store.py had no salary columns, so salary_max
+  read back None and the Federal sort silently degraded to alphabetical. Fixed
+  with an ADD-only migration (store.LATER_COLUMNS + _migrate). Verified against
+  the live 31-row db: all rows preserved, idempotent on re-run.
+- "Supervisory" is the federal spelling of a management role and passed the
+  manager/director/head-of exclusions. Added to EXCLUDE_TITLE_KEYWORDS.
+
+## STOP POINT — 2026-09-03 (USAJOBS)
+BLOCKED, non-urgent: no USAJOBS key, so the source is built but has never run
+against the live API. It returns 401 to any request without a real key, so the
+response shape comes from the published schema, field access is defensive, and
+tests/fixtures/usajobs.json is HAND-BUILT, not captured.
+When a key exists (free, https://developer.usajobs.gov):
+  1. Put USAJOBS_EMAIL + USAJOBS_KEY in .env
+  2. .venv/Scripts/python.exe jobwatch.py run --sources usajobs -v
+  3. Re-capture tests/fixtures/usajobs.json from the real response and re-check
+     every field name, especially where RemoteIndicator actually lives and
+     whether PositionLocationDisplay is present.
+Everything else is working: 178 tests, db holds the current private-sector
+matches, daily workflow is "run jobwatch and send me the digest".
