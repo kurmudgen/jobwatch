@@ -1,8 +1,9 @@
 # jobwatch
 
-Polls job boards once a day, filters for support / solutions / AI-engineer style
-remote roles, and prints (or emails) a markdown digest of the postings it has
-never seen before.
+Polls job boards once a day, filters for customer-facing engineering roles
+(support, solutions, implementation, forward-deployed, TAM), and prints or
+emails a markdown digest of the postings it has never seen before, sorted into
+tiers so it reads in the order worth applying in.
 
 Python 3.11. Dependencies: `requests`, `PyYAML`, `pytest`.
 
@@ -76,14 +77,27 @@ intern, internship, part-time, staff, principal, director, manager, vp or head
 of — except that "technical account manager" survives the `manager` rule.
 
 **Exclude** if the location or description mentions hybrid, on-site, onsite, in
-office or in-office *without* also mentioning remote.
+office or in-office *without* also mentioning remote. The "unless it also
+mentions remote" escape hatch is applied **per field**, which matters more than
+it sounds: Palantir ships the boilerplate *"there are a few roles that allow for
+'Remote' work on an exceptional basis"* in every description, and that single
+word was rescuing 62 roles whose location literally reads `(onsite)`. An on-site
+term in the location is therefore decisive unless the location itself says
+remote, or the description makes a role-level claim ("remote-first", "fully
+remote", "work from anywhere"). That keeps Vercel's `Hybrid - London, Berlin`
+role whose description says "this role is remote-first", and drops its
+`Partner Solutions Engineer` whose description says "in-person (hybrid)... 3
+days per week in office".
 
 **Flag** (keep, but mark for a manual look):
 
 - `eligibility:` the description says "not eligible", "excluding" or "except"
 - `states:` two or more US states are named, which usually means a
   hire-in-these-states-only list — check by hand whether Montana is on it
-- `clearance:` the description mentions clearance, TS/SCI, secret or DoD
+- `clearance:` the description mentions clearance, TS/SCI, top secret, DoD, or
+  "secret" within a few words of "clearance". Bare "secret" is not enough — it
+  was flagging every Supabase support role because the company blurb says "our
+  globally distributed team is our secret weapon"
 
 Matching runs on normalized text (lowercased, whitespace and unicode dashes
 collapsed) using word-boundary regexes, so "Support Engineer, **Internal**

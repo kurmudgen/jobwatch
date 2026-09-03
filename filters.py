@@ -55,10 +55,15 @@ ONSITE_KEYWORDS = ["hybrid", "on-site", "onsite", "in office", "in-office"]
 
 ELIGIBILITY_PHRASES = ["not eligible", "excluding", "except"]
 
+# "secret" on its own is far too loose - "our globally distributed team is our
+# secret weapon" was flagging every Supabase support role as needing a security
+# clearance. Require it to actually sit in a clearance context.
 CLEARANCE_PATTERNS = [
     r"\bclearance\b",
     r"\bts\s*/\s*sci\b",
-    r"\bsecret\b",
+    r"\btop[\s\-]secret\b",
+    r"\bsecret\b(?=[\s\w]{0,30}\bclearance\b)",
+    r"\bclearance\b(?=[\s\w]{0,30}\bsecret\b)",
     r"\bdod\b",
     r"\bdepartment of defense\b",
 ]
@@ -102,8 +107,8 @@ _REMOTE_RE = _phrase_re("remote")
 _REMOTE_RES = [_phrase_re(k) for k in REMOTE_HINTS]
 _EXCEPTION_RES = [_phrase_re(e) for e in MANAGER_EXCEPTIONS]
 
-# Longest first so "applied ai engineer" wins over "ai engineer" and
-# "technical support engineer" wins over "support engineer".
+# Longest first so "technical support engineer" wins over "support engineer"
+# and "customer support engineer" over both.
 _INCLUDE_ORDER = sorted(INCLUDE_TITLE_KEYWORDS, key=len, reverse=True)
 
 
@@ -128,19 +133,54 @@ def match_exclude(title: str, employment_type: str = "") -> "str | None":
     return None
 
 
-def match_onsite(location: str, description: str) -> "str | None":
-    """Return an on-site keyword if present and "remote" is absent, else None.
+# A bare "remote" somewhere in a long description is not evidence that THIS role
+# is remote. Palantir's postings carry the boilerplate "there are a few roles
+# that allow for 'Remote' work on an exceptional basis", which was rescuing
+# roles whose location literally reads "(onsite)". These phrases are about the
+# role itself, so they still override an on-site location tag - which is how
+# Vercel's "Hybrid - London, Berlin" but "this role is remote-first" survives.
+# Every entry must be at least two words. A single-word phrase, or one whose
+# non-word characters get stripped by _phrase_re, collapses to a bare
+# \bremote\b and silently rescues everything - which is exactly the bug this
+# list exists to prevent.
+STRONG_REMOTE_PHRASES = [
+    "remote first", "fully remote", "100% remote", "remote friendly",
+    "work from anywhere", "remote position", "remote role", "remote based",
+    "remote opportunity", "this role is remote",
+]
+_STRONG_REMOTE_RES = [_phrase_re(p) for p in STRONG_REMOTE_PHRASES]
+assert all(len(p.split()) >= 2 for p in STRONG_REMOTE_PHRASES), \
+    "a one-word strong-remote phrase would match any bare 'remote'"
 
-    "Hybrid - remote 3 days" keeps the posting; a bare "Hybrid, Austin TX"
-    drops it.
+
+def _has_strong_remote(text: str) -> bool:
+    norm = normalize(text)
+    return any(rx.search(norm) for rx in _STRONG_REMOTE_RES)
+
+
+def match_onsite(location: str, description: str) -> "str | None":
+    """Return an on-site keyword if present and not overridden by remote.
+
+    The "unless it also contains remote" escape hatch is applied per field. An
+    on-site term in the LOCATION is decisive unless the location itself says
+    remote or the description makes a role-level remote claim; a bare "remote"
+    buried in description boilerplate does not rescue an "(onsite)" location.
     """
-    norm = normalize((location or "") + " " + (description or ""))
-    hit = next((kw for kw in ONSITE_KEYWORDS if _ONSITE_RES[kw].search(norm)), None)
-    if not hit:
-        return None
-    if _REMOTE_RE.search(norm):
-        return None
-    return hit
+    location = location or ""
+    description = description or ""
+
+    loc_norm = normalize(location)
+    loc_hit = next((kw for kw in ONSITE_KEYWORDS if _ONSITE_RES[kw].search(loc_norm)), None)
+    if loc_hit:
+        if _REMOTE_RE.search(loc_norm) or _has_strong_remote(description):
+            return None
+        return loc_hit
+
+    desc_norm = normalize(description)
+    desc_hit = next((kw for kw in ONSITE_KEYWORDS if _ONSITE_RES[kw].search(desc_norm)), None)
+    if desc_hit and not _REMOTE_RE.search(desc_norm):
+        return desc_hit
+    return None
 
 
 def looks_remote(location: str, description: str, declared=None) -> bool:

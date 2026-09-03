@@ -137,11 +137,46 @@ def test_onsite_without_remote_is_dropped(location, description):
     assert filters.evaluate(posting(location=location, description_text=description)) is None
 
 
-def test_onsite_with_remote_is_kept():
-    job = posting(location="Hybrid - Austin, TX",
-                  description_text="Hybrid role, remote two days a week.")
+def test_remote_in_the_location_itself_keeps_the_posting():
+    job = posting(location="Hybrid - Remote, US",
+                  description_text="Join the team.")
     assert filters.match_onsite(job["location"], job["description_text"]) is None
     assert filters.evaluate(job) is not None
+
+
+def test_a_role_level_remote_claim_overrides_an_onsite_location():
+    """Vercel tags a location "Hybrid - London, Berlin" on a role whose
+    description says "this role is remote-first". That one stays."""
+    job = posting(location="Hybrid - London, Berlin",
+                  description_text="This role is remote-first with occasional travel.")
+    assert filters.match_onsite(job["location"], job["description_text"]) is None
+    assert filters.evaluate(job) is not None
+
+
+def test_boilerplate_remote_does_not_rescue_an_onsite_location():
+    """Palantir ships "there are a few roles that allow for Remote work on an
+    exceptional basis" in every description. It must not rescue "(onsite)"."""
+    job = posting(
+        location="Washington, D.C. (onsite)",
+        description_text=(
+            "Based on business need, there are a few roles that allow for "
+            "remote work on an exceptional basis."
+        ),
+    )
+    assert filters.match_onsite(job["location"], job["description_text"]) == "onsite"
+    assert filters.evaluate(job) is None
+
+
+def test_an_onsite_term_only_in_the_description_is_still_rescued_by_remote():
+    job = posting(location="United States",
+                  description_text="Hybrid optional. This is a remote team.")
+    assert filters.match_onsite(job["location"], job["description_text"]) is None
+
+
+def test_every_strong_remote_phrase_is_multi_word():
+    """A one-word entry collapses to a bare remote and rescues everything."""
+    for phrase in filters.STRONG_REMOTE_PHRASES:
+        assert len(phrase.split()) >= 2, phrase
 
 
 # --- flags -----------------------------------------------------------------
@@ -182,6 +217,25 @@ def test_clearance_flags(description, expected):
 
 def test_secretary_does_not_trip_the_secret_flag():
     assert filters.compute_flags("Report to the Secretary of the department.") == []
+
+
+@pytest.mark.parametrize("description", [
+    "Our globally distributed team is our secret weapon.",
+    "We keep secrets safe with our secret management tooling.",
+])
+def test_secret_outside_a_clearance_context_does_not_flag(description):
+    """This flagged every Supabase support role as needing a clearance."""
+    assert filters.compute_flags(description) == []
+
+
+@pytest.mark.parametrize("description", [
+    "Must hold an active Secret clearance.",
+    "Requires clearance at the Secret level.",
+    "Top Secret required.",
+])
+def test_secret_in_a_clearance_context_does_flag(description):
+    flags = filters.compute_flags(description)
+    assert any(f.startswith("clearance:") for f in flags)
 
 
 def test_flagged_postings_are_kept_not_dropped():
