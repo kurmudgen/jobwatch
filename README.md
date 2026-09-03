@@ -20,6 +20,8 @@ cp .env.example .env                            # then fill in the SMTP values
 python jobwatch.py run                  # fetch, filter, store, print the digest
 python jobwatch.py run --email          # ... and send it over SMTP
 python jobwatch.py list --days 7        # matches first seen in the last week
+python jobwatch.py list --days 7 --tier         # ... grouped by tier
+python jobwatch.py list --days 7 --only-tier 1  # ... tier 1 only
 python jobwatch.py add --name Foo --ats greenhouse --slug foo
 python jobwatch.py verify               # re-check every slug in companies.yaml
 ```
@@ -30,6 +32,7 @@ Useful flags on `run`:
 | --- | --- |
 | `--sources greenhouse,ashby,hn` | poll only a subset |
 | `--match-description` | also match include keywords in the description, not just the title |
+| `--tier` | group the digest by tier instead of by company, so it reads in apply order |
 | `--include-unverified` | poll companies marked `unverified` (skipped by default) |
 | `-v` | mirror the log to stderr as well as `jobwatch.log` |
 
@@ -61,8 +64,12 @@ comment is one posting; the company is the text before the first pipe.
 **Include** if the title matches any of: support engineer, customer support
 engineer, technical support engineer, solutions engineer, sales engineer,
 implementation engineer, forward deployed, deployed engineer, customer engineer,
-technical account manager, developer support, developer advocate, applied ai
-engineer, ai engineer, integration engineer, onboarding engineer.
+technical account manager, developer support, developer advocate, integration
+engineer, onboarding engineer.
+
+"ai engineer" and "applied ai engineer" are deliberately **not** on that list.
+At these companies those titles are senior ML research and modelling roles, not
+customer-facing engineering; including them added 22 false positives out of 319.
 
 **Exclude** if the title or employment type contains contract, contractor,
 intern, internship, part-time, staff, principal, director, manager, vp or head
@@ -88,6 +95,27 @@ One interpretation worth knowing: the include rule is applied to the **title**
 by default, because a keyword like "ai engineer" appears in a large share of
 descriptions at these companies and would swamp the digest. `--match-description`
 turns on description matching, and the digest says which field matched.
+
+## Tiers
+
+Every match is assigned a tier, shown in the digest and used to sort it:
+
+| Tier | Rule |
+| --- | --- |
+| 1 | title contains support, solutions, implementation or technical account manager, **and** no seniority word |
+| 2 | forward deployed / deployed engineer (FDE), or customer engineer |
+| 3 | everything else, including a tier-1 title carrying a seniority word |
+
+Seniority words: senior, sr, lead, chief, distinguished, advanced, staff,
+principal, director, head, vp, iii, iv. `II` is deliberately absent — "Support
+Engineer II" is a mid-level role and stays tier 1. Word boundaries apply, so
+"Support Engineer, Sri Lanka" is not read as "Sr" and "Leading Platform" is not
+read as "Lead".
+
+`--tier` groups the digest by tier so it reads top-down in the order worth
+applying in; without it the digest groups by company and sorts each company's
+roles by tier. Tier is derived from the title at render time rather than stored,
+so rows written before tiering existed sort correctly with no migration.
 
 ## Storage
 
