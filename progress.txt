@@ -103,3 +103,41 @@ Open items, none blocking:
   more, but that goes beyond the spec and would hide genuinely remote-friendly roles.
 - Remotive's software-dev feed currently returns only 18 postings and matched none.
   That is the API's real size right now, not a bug.
+
+## 2026-09-02 (later) — follow-up session
+
+### Done
+15. Dropped "ai engineer" / "applied ai engineer" from the include list. At these
+    companies they are senior ML roles. Removed 22 of 319 matches.
+16. Tiering + `--tier`. Tier 1 = support/solutions/implementation/TAM with no
+    seniority word; Tier 2 = FDE + customer engineer; Tier 3 = the rest, including
+    a tier-1 title carrying a seniority word. `run --tier` / `list --tier` group by
+    tier, `list --only-tier N` filters. Tier is derived from the title at render
+    time, so no schema migration was needed.
+17. Pushed public: https://github.com/kurmudgen/jobwatch
+18. Two filter bugs found by actually reading the tier 1 output:
+    - Boilerplate "remote" was rescuing on-site roles. Palantir puts "there are a
+      few roles that allow for 'Remote' work on an exceptional basis" in every
+      description; that one word cancelled the on-site rule for 62 roles whose
+      location reads "(onsite)"/"(hybrid)", two of which reached tier 1. The
+      escape hatch is now per field. First attempt at the fix silently did nothing
+      because _phrase_re("remote -") collapses to a bare \bremote\b - entries are
+      now asserted multi-word and tested.
+    - Bare "secret" flagged every Supabase support role as needing a clearance
+      ("our globally distributed team is our secret weapon"). It now has to sit
+      within a few words of "clearance", or be "top secret".
+19. Rebuilt jobwatch.db from scratch (approved) so the stored set matches the
+    current rules. 224 matches: Tier 1 = 82, Tier 2 = 66, Tier 3 = 76.
+
+### 105 tests passing.
+
+## STOP POINT — 2026-09-02 (follow-up)
+Still outstanding: the email has NEVER been sent. mailer.py has only ever been
+exercised on its failure branch. .env does not exist. To finish:
+  1. Create .env from .env.example with real SMTP values (Gmail needs an App
+     Password, not the account password).
+  2. `.venv/Scripts/python.exe jobwatch.py run --email --tier`
+     Note: the db is now current, so that run will report 0 new and email an empty
+     digest. To send a real one, either wait for tomorrow's postings or delete
+     jobwatch.db first to re-baseline.
+  3. Only after a real send has landed should the 7 AM schedule be trusted.
