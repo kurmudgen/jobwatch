@@ -447,3 +447,28 @@ def test_dedupe_is_case_and_whitespace_insensitive_on_the_title():
     kept = filters.dedupe(batch)
     assert len(kept) == 1
     assert kept[0]["url"] == "https://example.com/2"
+
+
+# --- html digest -----------------------------------------------------------
+
+def test_html_digest_escapes_and_links():
+    import digest
+    html = digest.render_html([
+        posting(company="Acme & Co", title="Support <Engineer>",
+                url="https://example.com/jobs?gh_jid=1", location="Remote, AMER"),
+    ], title="jobwatch")
+    # Company and title are escaped, the URL is a real anchor.
+    assert "Acme &amp; Co" in html
+    assert "&lt;Engineer&gt;" in html
+    assert "<a href='https://example.com/jobs?gh_jid=1'" in html
+    # The "=" in the query string must survive verbatim; the plain-text path
+    # through the Gmail connector eats it.
+    assert "gh_jid=1" in html
+    assert "<script" not in html
+
+
+def test_html_digest_handles_no_matches():
+    import digest
+    html = digest.render_html([], empty_note="Nothing new.")
+    assert "Nothing new." in html
+    assert "<ul" not in html

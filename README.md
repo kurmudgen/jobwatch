@@ -1,9 +1,9 @@
 # jobwatch
 
 Polls job boards once a day, filters for customer-facing engineering roles
-(support, solutions, implementation, forward-deployed, TAM), and prints or
-emails a markdown digest of the postings it has never seen before, sorted into
-tiers so it reads in the order worth applying in.
+(support, solutions, implementation, forward-deployed, TAM), and prints a
+markdown digest of the postings it has never seen before, sorted into tiers so
+it reads in the order worth applying in.
 
 Python 3.11. Dependencies: `requests`, `PyYAML`, `pytest`.
 
@@ -221,51 +221,49 @@ if you find the right board, `python jobwatch.py add --name X --ats Y --slug Z`.
 
 Verified but currently empty: **Rebellion Defense** (real board, zero open roles).
 
-## Email
+## Daily use
 
-`run --email` reads `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and
-`EMAIL_TO` from the environment (or `.env`; see `.env.example`). Port 465 uses
-implicit TLS, anything else uses STARTTLS. `EMAIL_TO` may be a comma-separated
-list. The subject is forced to ASCII so it cannot arrive mojibaked. For Gmail,
-use an App Password, not the account password.
+There is no cron job and no scheduled task. Ask Claude Code once a day:
 
-A failed send does not lose the run: the postings are already stored and the
-digest has already been printed. The command exits 2 so cron can tell.
+> run jobwatch and send me the digest
 
-## Scheduling
+It runs `python jobwatch.py run --tier`, renders the HTML digest with
+`--html`, and mails it through the Gmail connector attached to the session.
+That keeps the SMTP App Password off disk entirely.
 
-### cron (Linux / macOS) — 7:00 AM daily
+**Send the digest as an attachment, not in the body.** Gmail rewrites every URL
+in a message body into a `google.com/url?q=...&ust=1788...` tracking redirect,
+and the connector's quoted-printable encoder then eats the `=` in `ust=17...`
+because `=17` is a valid quoted-printable escape for byte 0x17. The link arrives
+containing a control character. This affects the plain-text body *and* HTML
+`href` attributes, and it will keep happening for years, since every current
+unix-millisecond timestamp starts with `17`.
 
-```cron
-0 7 * * * /path/to/jobwatch/run.sh --email >> /path/to/jobwatch/cron.log 2>&1
+Attachments are base64-encoded and are not rewritten, so links inside an
+attached HTML file survive intact. The working recipe:
+
+```bash
+python jobwatch.py run --tier                 # store + print markdown
+python jobwatch.py list --days 1 --html       # HTML for the attachment
 ```
 
-`chmod +x run.sh` first. The wrapper cd's to its own directory, picks the venv
-interpreter, and sources `.env` — cron starts with almost no environment, so
-without that the SMTP variables would be missing.
+then base64 the HTML and send it as a `text/html` attachment, keeping URLs out
+of the message body entirely. Verify after sending: re-read the message and
+check that no `google.com/url` wrapper and no control byte appears where a URL
+should be.
 
-### Windows Task Scheduler — 7:00 AM daily
+## Optional: SMTP
 
-PowerShell, one line (run as your own user, not SYSTEM, so it can read `.env`):
+`run --email` sends over SMTP using `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+`SMTP_PASS` and `EMAIL_TO` (see `.env.example`). Port 465 uses implicit TLS,
+anything else STARTTLS. `EMAIL_TO` may be comma-separated. Whitespace in
+`SMTP_PASS` is stripped, so a Gmail App Password can be pasted exactly as
+Google displays it. The subject is forced to ASCII.
 
-```powershell
-$dir = "S:\Job search"
-$action  = New-ScheduledTaskAction -Execute "$dir\.venv\Scripts\python.exe" -Argument "jobwatch.py run --email" -WorkingDirectory $dir
-$trigger = New-ScheduledTaskTrigger -Daily -At 7:00AM
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -WakeToRun
-Register-ScheduledTask -TaskName "jobwatch" -Action $action -Trigger $trigger -Settings $settings -Description "Daily job digest"
-```
-
-`-StartWhenAvailable` makes the task run late if the machine was asleep at 7:00
-rather than skipping the day.
-
-Or through the GUI: Task Scheduler → Create Task → Triggers: Daily 7:00 AM →
-Actions: Start a program → Program `S:\Job search\.venv\Scripts\python.exe`,
-Arguments `jobwatch.py run --email`, Start in `S:\Job search`.
-
-Check it with `Get-ScheduledTaskInfo -TaskName jobwatch`, run it on demand with
-`Start-ScheduledTask -TaskName jobwatch`, remove it with
-`Unregister-ScheduledTask -TaskName jobwatch`.
+This path is **not configured and has never sent a real message.** Its MIME
+output has been verified to round-trip byte-identically with all URLs intact,
+but no live send has been made. A failed send does not lose the run: postings
+are already stored and the digest already printed. The command exits 2.
 
 ## Tests
 
@@ -285,10 +283,9 @@ sources.py       fetchers + normalizers, one per source
 filters.py       include / exclude / flag rules
 store.py         SQLite persistence
 digest.py        markdown rendering
-mailer.py        SMTP delivery
+mailer.py        optional SMTP delivery (unconfigured)
 verify.py        slug verification and variant search
-config.py        companies.yaml, logging, .env
+config.py        companies.yaml, logging, .env reader
 textutil.py      HTML-to-text and text normalization
 companies.yaml   the boards to poll
-run.sh           cron wrapper
 ```

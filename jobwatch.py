@@ -60,7 +60,8 @@ def cmd_run(args) -> int:
         conn.close()
     log.info("%d new postings (db now holds %d)", len(new_rows), total)
 
-    body = digest.render(
+    renderer = digest.render_html if args.html else digest.render
+    body = renderer(
         new_rows,
         title="jobwatch: new matches",
         errors=errors,
@@ -100,7 +101,8 @@ def cmd_list(args) -> int:
     rows = filters.dedupe(rows)
     if args.only_tier:
         rows = [r for r in rows if filters.compute_tier(r.get("title") or "") == args.only_tier]
-    print(digest.render(
+    renderer = digest.render_html if args.html else digest.render
+    print(renderer(
         rows,
         title="jobwatch: matches from the last " + str(args.days) + " days",
         empty_note="Nothing recorded in that window.",
@@ -205,6 +207,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="keep only US-remote postings (default: on; --no-us-remote disables)",
     )
     run.add_argument(
+        "--html",
+        action="store_true",
+        help="emit the digest as HTML (used when sending via the Gmail connector)",
+    )
+    run.add_argument(
         "--include-unverified",
         action="store_true",
         help="poll companies marked unverified in companies.yaml",
@@ -218,6 +225,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     listing.add_argument(
         "--only-tier", type=int, choices=(1, 2, 3), help="show only this tier"
+    )
+    listing.add_argument(
+        "--html", action="store_true", help="emit the digest as HTML"
     )
     listing.add_argument(
         "--us-remote",
