@@ -60,6 +60,7 @@ def cmd_run(args) -> int:
             "No new matches. Scanned " + str(len(postings)) + " postings, "
             + str(len(matches)) + " matched the filters but were all seen before."
         ),
+        by_tier=args.tier,
     )
     print(body)
 
@@ -86,10 +87,13 @@ def cmd_list(args) -> int:
         rows = store.recent(conn, days=args.days)
     finally:
         conn.close()
+    if args.only_tier:
+        rows = [r for r in rows if filters.compute_tier(r.get("title") or "") == args.only_tier]
     print(digest.render(
         rows,
         title="jobwatch: matches from the last " + str(args.days) + " days",
         empty_note="Nothing recorded in that window.",
+        by_tier=args.tier,
     ))
     return 0
 
@@ -179,6 +183,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="also match include keywords in the description, not just the title",
     )
     run.add_argument(
+        "--tier",
+        action="store_true",
+        help="group the digest by tier (1 core, 2 adjacent, 3 rest) instead of by company",
+    )
+    run.add_argument(
         "--include-unverified",
         action="store_true",
         help="poll companies marked unverified in companies.yaml",
@@ -187,6 +196,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     listing = sub.add_parser("list", help="show matches already in the database")
     listing.add_argument("--days", type=int, default=7, help="lookback window (default 7)")
+    listing.add_argument(
+        "--tier", action="store_true", help="group by tier instead of by company"
+    )
+    listing.add_argument(
+        "--only-tier", type=int, choices=(1, 2, 3), help="show only this tier"
+    )
     listing.set_defaults(func=cmd_list)
 
     add = sub.add_parser("add", help="append a company to companies.yaml")

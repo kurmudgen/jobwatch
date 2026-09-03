@@ -26,11 +26,12 @@ INCLUDE_TITLE_KEYWORDS = [
     "technical account manager",
     "developer support",
     "developer advocate",
-    "applied ai engineer",
-    "ai engineer",
     "integration engineer",
     "onboarding engineer",
 ]
+# Deliberately NOT included: "ai engineer" / "applied ai engineer". At these
+# companies those titles are senior ML research and modelling roles, not the
+# customer-facing engineering this list is for.
 
 EXCLUDE_TITLE_KEYWORDS = [
     "contract",
@@ -185,6 +186,51 @@ def compute_flags(description: str) -> "list[str]":
     return flags
 
 
+# --- tiering ----------------------------------------------------------------
+#
+# Tier 1  core target: support / solutions / implementation / TAM, no seniority
+# Tier 2  adjacent:    forward deployed (FDE) and customer engineer
+# Tier 3  everything else, including a tier-1 role carrying a seniority word
+#
+# The digest sorted by tier reads top-down in the order worth applying in.
+
+TIER1_KEYWORDS = ["support", "solutions", "implementation", "technical account manager"]
+
+TIER2_KEYWORDS = ["forward deployed", "deployed engineer", "customer engineer"]
+
+# "II" is deliberately absent - "Support Engineer II" is a mid-level role, not a
+# senior one. staff/principal/director/head/vp never reach here (they are
+# excluded outright); they are listed so the rule stands on its own.
+SENIORITY_WORDS = [
+    "senior", "sr", "lead", "chief", "distinguished", "advanced",
+    "staff", "principal", "director", "head", "vp", "iii", "iv",
+]
+
+_TIER1_RES = [_phrase_re(k) for k in TIER1_KEYWORDS]
+_TIER2_RES = [_phrase_re(k) for k in TIER2_KEYWORDS]
+_SENIORITY_RES = {w: _phrase_re(w) for w in SENIORITY_WORDS}
+
+TIER_LABELS = {1: "Tier 1 - core target", 2: "Tier 2 - adjacent", 3: "Tier 3 - everything else"}
+
+
+def match_seniority(title: str) -> "str | None":
+    norm = normalize(title)
+    for word in SENIORITY_WORDS:
+        if _SENIORITY_RES[word].search(norm):
+            return word
+    return None
+
+
+def compute_tier(title: str) -> int:
+    """1, 2 or 3. Tier 1 requires a core keyword AND no seniority word."""
+    norm = normalize(title)
+    if any(rx.search(norm) for rx in _TIER1_RES) and not match_seniority(title):
+        return 1
+    if any(rx.search(norm) for rx in _TIER2_RES):
+        return 2
+    return 3
+
+
 def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     """Apply all rules to a normalized posting.
 
@@ -220,6 +266,7 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     result["matched_keyword"] = keyword
     result["matched_in"] = matched_in
     result["flags"] = compute_flags(description)
+    result["tier"] = compute_tier(title)
     result["remote"] = looks_remote(location, description, posting.get("remote"))
     result.pop("reject_reason", None)
     return result

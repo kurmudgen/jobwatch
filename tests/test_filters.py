@@ -35,8 +35,6 @@ def posting(**kwargs):
     ("Technical Account Manager", "technical account manager"),
     ("Developer Support Specialist", "developer support"),
     ("Developer Advocate", "developer advocate"),
-    ("Applied AI Engineer", "applied ai engineer"),
-    ("AI Engineer", "ai engineer"),
     ("Integration Engineer", "integration engineer"),
     ("Onboarding Engineer", "onboarding engineer"),
 ])
@@ -49,9 +47,19 @@ def test_include_is_case_insensitive_and_whitespace_tolerant():
 
 
 def test_most_specific_keyword_wins():
-    # "applied ai engineer" contains "ai engineer"; report the specific one.
-    assert filters.match_include("Applied AI Engineer") == "applied ai engineer"
     assert filters.match_include("Technical Support Engineer") == "technical support engineer"
+    assert filters.match_include("Customer Support Engineer") == "customer support engineer"
+
+
+@pytest.mark.parametrize("title", [
+    "AI Engineer",
+    "Applied AI Engineer",
+    "Senior Applied AI Engineer, Inference",
+])
+def test_ai_engineer_titles_are_not_included(title):
+    """At these companies these are senior ML roles, not customer-facing ones."""
+    assert filters.match_include(title) is None
+    assert filters.evaluate(posting(title=title)) is None
 
 
 def test_unrelated_title_does_not_match():
@@ -191,3 +199,64 @@ def test_evaluate_all_returns_only_survivors():
     ]
     kept = filters.evaluate_all(batch)
     assert [p["url"] for p in kept] == ["https://example.com/1"]
+
+
+# --- tiers -----------------------------------------------------------------
+
+@pytest.mark.parametrize("title", [
+    "Support Engineer",
+    "Customer Support Engineer",
+    "Technical Support Engineer",
+    "Solutions Engineer, EMEA",
+    "Implementation Engineer",
+    "Technical Account Manager",
+    "Developer Support Specialist",
+    "Support Engineer II",   # II is mid-level, not seniority
+])
+def test_tier_one_is_core_targets_without_seniority(title):
+    assert filters.compute_tier(title) == 1
+
+
+@pytest.mark.parametrize("title", [
+    "Forward Deployed Engineer",
+    "Forward Deployed Software Engineer",
+    "Deployed Engineer",
+    "Customer Engineer",
+])
+def test_tier_two_is_fde_and_customer_engineer(title):
+    assert filters.compute_tier(title) == 2
+
+
+@pytest.mark.parametrize("title", [
+    "Sales Engineer",
+    "Integration Engineer",
+    "Developer Advocate",
+    "Onboarding Engineer",
+])
+def test_tier_three_is_everything_else(title):
+    assert filters.compute_tier(title) == 3
+
+
+@pytest.mark.parametrize("title", [
+    "Senior Solutions Engineer",
+    "Sr. Support Engineer",
+    "Lead Implementation Engineer",
+    "Chief Solutions Engineer",
+    "Distinguished Solutions Engineer",
+    "Support Engineer III",
+])
+def test_seniority_demotes_a_tier_one_title_to_tier_three(title):
+    assert filters.match_seniority(title) is not None
+    assert filters.compute_tier(title) == 3
+
+
+def test_seniority_respects_word_boundaries():
+    # "Sri Lanka" must not read as "Sr", "Leading" must not read as "Lead".
+    assert filters.match_seniority("Support Engineer, Sri Lanka") is None
+    assert filters.match_seniority("Support Engineer, Leading Platform") is None
+
+
+def test_evaluate_attaches_the_tier():
+    assert filters.evaluate(posting(title="Support Engineer"))["tier"] == 1
+    assert filters.evaluate(posting(title="Customer Engineer"))["tier"] == 2
+    assert filters.evaluate(posting(title="Sales Engineer"))["tier"] == 3
