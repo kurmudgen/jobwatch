@@ -1,0 +1,15 @@
+# secrets
+.env
+.env.local
+
+# runtime data
+jobwatch.db
+jobwatch.db-journal
+*.log
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/

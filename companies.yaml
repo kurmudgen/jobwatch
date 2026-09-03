@@ -1,0 +1,212 @@
+companies:
+- name: Supabase
+  ats: ashby
+  slug: supabase
+  status: verified
+- name: Vercel
+  ats: greenhouse
+  slug: vercel
+  status: verified
+- name: Cloudflare
+  ats: greenhouse
+  slug: cloudflare
+  status: verified
+- name: Stripe
+  ats: greenhouse
+  slug: stripe
+  status: verified
+- name: Netlify
+  ats: greenhouse
+  slug: netlify
+  status: verified
+- name: Clerk
+  ats: ashby
+  slug: clerk
+  status: verified
+- name: Resend
+  ats: ashby
+  slug: resend
+  status: verified
+- name: Expo
+  ats: ashby
+  slug: expo
+  status: unverified
+  note: no working slug; tried expo=HTTP 404
+- name: PostHog
+  ats: ashby
+  slug: posthog
+  status: verified
+- name: Retool
+  ats: greenhouse
+  slug: retool
+  status: unverified
+  note: no working slug; tried retool=HTTP 404
+- name: Twilio
+  ats: greenhouse
+  slug: twilio
+  status: verified
+- name: GitHub
+  ats: greenhouse
+  slug: github
+  status: unverified
+  note: no working slug; tried github=HTTP 404
+- name: Datadog
+  ats: greenhouse
+  slug: datadog
+  status: verified
+- name: Sentry
+  ats: ashby
+  slug: sentry
+  status: verified
+- name: Render
+  ats: ashby
+  slug: render
+  status: verified
+- name: Railway
+  ats: ashby
+  slug: railway
+  status: verified
+- name: Neon
+  ats: ashby
+  slug: neon
+  status: verified
+- name: PlanetScale
+  ats: greenhouse
+  slug: planetscale
+  status: verified
+- name: Anthropic
+  ats: greenhouse
+  slug: anthropic
+  status: verified
+- name: OpenAI
+  ats: ashby
+  slug: openai
+  status: verified
+- name: Cursor (Anysphere)
+  ats: ashby
+  slug: cursor
+  status: verified
+- name: Replit
+  ats: ashby
+  slug: replit
+  status: verified
+- name: Linear
+  ats: ashby
+  slug: linear
+  status: verified
+- name: Notion
+  ats: ashby
+  slug: notion
+  status: verified
+- name: Figma
+  ats: greenhouse
+  slug: figma
+  status: verified
+- name: Auth0 (Okta)
+  ats: greenhouse
+  slug: okta
+  status: verified
+- name: WorkOS
+  ats: ashby
+  slug: workos
+  status: verified
+- name: Fly.io
+  ats: lever
+  slug: flyio
+  status: unverified
+  note: no working slug; tried flyio=HTTP 404, fly-io=HTTP 404, fly=HTTP 404
+- name: Temporal
+  ats: ashby
+  slug: temporal
+  status: verified
+- name: HashiCorp
+  ats: greenhouse
+  slug: hashicorp
+  status: unverified
+  note: no working slug; tried hashicorp=HTTP 404
+- name: Grafana Labs
+  ats: greenhouse
+  slug: grafanalabs
+  status: verified
+- name: Elastic
+  ats: greenhouse
+  slug: elastic
+  status: verified
+- name: MongoDB
+  ats: greenhouse
+  slug: mongodb
+  status: verified
+- name: Cockroach Labs
+  ats: greenhouse
+  slug: cockroachlabs
+  status: verified
+- name: Snowflake
+  ats: ashby
+  slug: snowflake
+  status: verified
+- name: dbt Labs
+  ats: greenhouse
+  slug: dbtlabs
+  status: unverified
+  note: no working slug; tried dbtlabs=HTTP 404, dbt-labs=HTTP 404, dbt=HTTP 404
+- name: Airbyte
+  ats: ashby
+  slug: airbyte
+  status: verified
+- name: Deepgram
+  ats: ashby
+  slug: deepgram
+  status: verified
+- name: ElevenLabs
+  ats: ashby
+  slug: elevenlabs
+  status: verified
+- name: LangChain
+  ats: ashby
+  slug: langchain
+  status: verified
+- name: Weights & Biases
+  ats: greenhouse
+  slug: weightsbiases
+  status: unverified
+  note: no working slug; tried weightsbiases=HTTP 404, weights-biases=HTTP 404, weights=HTTP 404
+- name: Scale AI
+  ats: greenhouse
+  slug: scaleai
+  status: verified
+- name: Palantir
+  ats: lever
+  slug: palantir
+  status: verified
+- name: Anduril
+  ats: greenhouse
+  slug: andurilindustries
+  status: verified
+- name: Shield AI
+  ats: greenhouse
+  slug: shieldai
+  status: unverified
+  note: no working slug; tried shieldai=HTTP 404, shield-ai=HTTP 404, shield=wrong company
+- name: Second Front
+  ats: greenhouse
+  slug: secondfrontsystems
+  status: unverified
+  note: no working slug; tried secondfrontsystems=HTTP 404, secondfront=HTTP 404, second-front=HTTP 404,
+    second=HTTP 404
+- name: Rebellion Defense
+  ats: greenhouse
+  slug: rebelliondefense
+  status: verified
+- name: Vannevar Labs
+  ats: greenhouse
+  slug: vannevarlabs
+  status: verified
+- name: Govini
+  ats: greenhouse
+  slug: govini
+  status: unverified
+  note: no working slug; tried govini=HTTP 404
+- name: Chainguard
+  ats: greenhouse
+  slug: chainguard
+  status: verified

@@ -1,0 +1,53 @@
+jobwatch — session progress
+===========================
+
+## 2026-09-02 — build session 1
+
+### Done
+1.  Repo scaffolding: git init, .gitignore (.env, jobwatch.db, *.log), requirements.txt
+    (requests, PyYAML, pytest), .env.example, Python 3.11 venv at .venv/.
+2.  textutil.py — HTML-to-text (handles Greenhouse's double-escaped content) and
+    normalize() for case/whitespace/unicode-dash-insensitive keyword matching.
+3.  filters.py — include / exclude / on-site / flag rules. Word-boundary regexes so
+    "intern" does not match "internal" and "vp" does not match "vpc".
+    "manager" is excluded except "technical account manager".
+4.  sources.py — normalizers + fetchers for greenhouse, lever, ashby, remotive,
+    remoteok, hn. 20s timeout, one retry, per-source try/except in collect().
+5.  config.py — companies.yaml load/save/add, logging to jobwatch.log, minimal .env reader.
+6.  companies.yaml — seeded with the 50 requested companies.
+7.  verify.py + `jobwatch.py verify` — probes each slug, tries name-derived variants,
+    records what worked or marks the entry `unverified` (runs skip those).
+8.  store.py — SQLite (jobwatch.db), table `postings` keyed on url, first_seen/last_seen/
+    seen_count. Only URLs never seen before count as new.
+9.  digest.py — markdown digest grouped by company.
+10. mailer.py — SMTP over STARTTLS (or implicit TLS on port 465), ASCII-only subject.
+11. jobwatch.py — CLI: run / run --email / list --days N / add / verify.
+
+### Verification results (2026-09-02): 40/50 companies verified
+Corrected slugs found by variant search:
+  Neon        ashby/neondatabase   -> ashby/neon
+  Cursor      ashby/anysphere      -> ashby/cursor
+Corrected by cross-ATS probe (the requested ATS was wrong, not the slug):
+  Sentry      greenhouse/sentry              -> ashby/sentry
+  Notion      greenhouse/notion              -> ashby/notion
+  Temporal    greenhouse/temporaltechnologies-> ashby/temporal
+  Snowflake   greenhouse/snowflakecomputing  -> ashby/snowflake
+  Airbyte     greenhouse/airbyte             -> ashby/airbyte
+  Vannevar    ashby/vannevarlabs             -> greenhouse/vannevarlabs
+Still unverified (10) — no public greenhouse/lever/ashby board found:
+  Expo, Retool, GitHub, Fly.io, HashiCorp, dbt Labs, Weights & Biases,
+  Shield AI, Second Front, Govini
+Verified but currently empty: Rebellion Defense (real board, zero open roles).
+
+### Gotcha worth remembering
+A 200 from a Greenhouse slug is not proof of identity. The variant "shield" returns a
+GitHub Pages demo board ("Copy of Avenger", Beijing) — not Shield AI. verify.py now
+requires a guessed variant to prove itself via the /v1/boards/{slug} name (Greenhouse)
+or the slug appearing in the posting URL path (Lever/Ashby). Seeded slugs are taken at
+face value because many real boards apply through a custom domain, so the apply-URL
+host proves nothing.
+
+### Next
+- pytest suite (filters + one normalizer per source, from fixtures)
+- run.sh wrapper + README (cron 7am + Windows Task Scheduler)
+- first real run, show the digest
