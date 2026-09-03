@@ -183,6 +183,156 @@ def match_onsite(location: str, description: str) -> "str | None":
     return None
 
 
+# --- US-remote filter -------------------------------------------------------
+#
+# Keep a posting only if its LOCATION says remote and points at the US (or names
+# no country at all). Descriptions are not consulted: a description mentioning
+# the US proves nothing about where the role is based.
+
+# Unambiguous "this is a US role" tokens. Checked before the non-US list, so a
+# multi-region posting like "Remote - NA, APAC, EMEA" is kept.
+STRONG_US_MARKERS = [
+    "united states", "usa", "u s", "us", "north america", "na",
+    "amer", "americas", "conus", "nationwide",
+]
+
+# Weaker: a state name or abbreviation. Checked *after* the non-US list, so
+# "CA-Ontario-Toronto" reads as Canada rather than California.
+US_STATE_ABBREVS = [
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
+    "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS",
+    "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK",
+    "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
+    "WI", "WY", "DC",
+]
+
+NON_US_REGIONS = [
+    "emea", "apac", "latam", "anz", "europe", "european", "asia", "africa",
+    "middle east", "oceania", "eu", "uk", "gb", "benelux", "dach", "nordics",
+]
+
+NON_US_COUNTRIES = [
+    "canada", "mexico", "brazil", "argentina", "chile", "peru", "colombia",
+    "united kingdom", "england", "scotland", "ireland", "france", "germany",
+    "spain", "italy", "netherlands", "belgium", "poland", "sweden", "norway",
+    "denmark", "finland", "iceland", "portugal", "austria", "switzerland",
+    "czechia", "czech republic", "romania", "bulgaria", "hungary", "greece",
+    "croatia", "serbia", "slovakia", "slovenia", "ukraine", "lithuania",
+    "latvia", "estonia", "luxembourg", "malta", "cyprus", "turkey", "israel",
+    "uae", "united arab emirates", "saudi arabia", "qatar", "kuwait", "egypt",
+    "morocco", "tunisia", "south africa", "nigeria", "kenya", "ghana",
+    "india", "pakistan", "bangladesh", "sri lanka", "nepal", "china", "japan",
+    "south korea", "korea", "singapore", "taiwan", "hong kong", "malaysia",
+    "indonesia", "thailand", "vietnam", "philippines", "australia",
+    "new zealand", "russia", "kazakhstan", "armenia",
+]
+
+NON_US_CITIES = [
+    "london", "dublin", "berlin", "munich", "hamburg", "paris", "amsterdam",
+    "rotterdam", "brussels", "madrid", "barcelona", "lisbon", "milan", "rome",
+    "zurich", "geneva", "vienna", "stockholm", "oslo", "copenhagen",
+    "helsinki", "warsaw", "krakow", "wroclaw", "gdansk", "prague", "budapest",
+    "bucharest", "sofia", "athens", "istanbul", "tel aviv", "dubai",
+    "abu dhabi", "riyadh", "doha", "cairo", "lagos", "nairobi",
+    "johannesburg", "cape town", "bangalore", "bengaluru", "mumbai", "delhi",
+    "hyderabad", "chennai", "pune", "beijing", "shanghai", "shenzhen",
+    "tokyo", "osaka", "kyoto", "seoul", "taipei", "kuala lumpur", "jakarta",
+    "bangkok", "manila", "hanoi", "sydney", "melbourne", "brisbane", "perth",
+    "auckland", "wellington", "toronto", "vancouver", "montreal", "ottawa",
+    "calgary", "ontario", "quebec", "guadalajara", "sao paulo",
+    "rio de janeiro", "buenos aires", "santiago", "lima", "bogota", "vilnius",
+    "riga", "tallinn",
+]
+
+_STRONG_US_RES = [_phrase_re(m) for m in STRONG_US_MARKERS]
+_US_STATE_NAME_RES = [_phrase_re(s) for s in US_STATES]
+# Abbreviations are matched case-sensitively against the raw location so the
+# English words "in", "or", "ok", "me", "hi" cannot be read as state codes.
+_US_ABBREV_RE = re.compile(r"\b(" + "|".join(US_STATE_ABBREVS) + r")\b")
+_NON_US_RES = [
+    _phrase_re(m) for m in NON_US_REGIONS + NON_US_COUNTRIES + NON_US_CITIES
+]
+
+
+def has_us_marker(location: str) -> bool:
+    """True if the location names the US, a US state, or a US-wide region."""
+    norm = normalize(location)
+    if any(rx.search(norm) for rx in _STRONG_US_RES):
+        return True
+    if any(rx.search(norm) for rx in _US_STATE_NAME_RES):
+        return True
+    return bool(_US_ABBREV_RE.search(location or ""))
+
+
+def has_non_us_marker(location: str) -> bool:
+    norm = normalize(location)
+    return any(rx.search(norm) for rx in _NON_US_RES)
+
+
+def is_us_remote(location: str) -> bool:
+    """Remote, and either US-flavoured or naming no country at all."""
+    location = location or ""
+    norm = normalize(location)
+    if not _REMOTE_RE.search(norm):
+        return False
+
+    # Strong US tokens win outright, so a multi-region posting that includes
+    # North America survives alongside EMEA and APAC.
+    if any(rx.search(norm) for rx in _STRONG_US_RES):
+        return True
+    # An explicit non-US country, city or region drops it.
+    if has_non_us_marker(location):
+        return False
+    # A state name or code is a US signal once no foreign place is present.
+    if any(rx.search(norm) for rx in _US_STATE_NAME_RES):
+        return True
+    if _US_ABBREV_RE.search(location):
+        return True
+    # Remote with no country named at all ("Remote", "Remote, Global").
+    return True
+
+
+def filter_us_remote(postings: "Iterable[dict]") -> "list[dict]":
+    return [p for p in postings if is_us_remote(p.get("location") or "")]
+
+
+# --- dedupe -----------------------------------------------------------------
+
+def _dedupe_score(posting: dict) -> tuple:
+    """Higher sorts first: prefer the US/AMER copy of a cloned req."""
+    location = posting.get("location") or ""
+    return (
+        1 if has_us_marker(location) else 0,
+        1 if _REMOTE_RE.search(normalize(location)) else 0,
+        -len(location),  # a shorter location is usually the cleaner listing
+    )
+
+
+def dedupe(postings: "Iterable[dict]") -> "list[dict]":
+    """Collapse reqs that share company + title and differ only by location,
+    keeping the US/AMER one. Order is otherwise preserved."""
+    groups: "dict[tuple, list[dict]]" = {}
+    order = []
+    for posting in postings:
+        key = (
+            normalize(posting.get("company") or ""),
+            normalize(posting.get("title") or ""),
+        )
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(posting)
+
+    kept = []
+    for key in order:
+        candidates = groups[key]
+        if len(candidates) == 1:
+            kept.append(candidates[0])
+        else:
+            kept.append(max(candidates, key=_dedupe_score))
+    return kept
+
+
 def looks_remote(location: str, description: str, declared=None) -> bool:
     if declared is not None:
         return bool(declared)

@@ -314,3 +314,136 @@ def test_evaluate_attaches_the_tier():
     assert filters.evaluate(posting(title="Support Engineer"))["tier"] == 1
     assert filters.evaluate(posting(title="Customer Engineer"))["tier"] == 2
     assert filters.evaluate(posting(title="Sales Engineer"))["tier"] == 3
+
+
+# --- US-remote filter ------------------------------------------------------
+
+@pytest.mark.parametrize("location", [
+    "Remote",
+    "Remote, Global",
+    "Remote - US",
+    "Remote, AMER",
+    "United States (Remote)",
+    "United States - Remote",
+    "Seattle, WA, Remote-US",
+    "Remote, New York, San Francisco",
+    "Colorado, USA, Remote",
+    "US-NY-New York, US-NJ Metro-Remote, US-NY-Remote",
+    "US-IL-Remote, Dallas, TX, US-CO-Denver",
+    "Remote in the US, Remote in Canada",
+])
+def test_us_remote_keeps(location):
+    assert filters.is_us_remote(location) is True
+
+
+@pytest.mark.parametrize("location", [
+    "Remote - Colombia",
+    "Remote, EMEA",
+    "Remote (EMEA)",
+    "Remote, APAC",
+    "Remote - India",
+    "Remote - Japan",
+    "United Kingdom, Remote",
+    "France (Remote)",
+    "MX-Mexico-Remote",
+    "Ontario - Remote",
+    "Singapore - Remote",
+    "Remote - United Kingdom, Germany",
+    "EU | Remote",
+])
+def test_us_remote_drops_foreign(location):
+    assert filters.is_us_remote(location) is False
+
+
+@pytest.mark.parametrize("location", [
+    "San Francisco, CA",                       # US but not remote
+    "Costa Mesa, California, United States",   # US but not remote
+    "London",
+    "Distributed",
+    "Hybrid - London, Berlin",
+])
+def test_us_remote_requires_the_word_remote(location):
+    assert filters.is_us_remote(location) is False
+
+
+def test_a_multi_region_posting_that_includes_north_america_is_kept():
+    """Strong US tokens win over a co-listed EMEA/APAC."""
+    assert filters.is_us_remote("Remote - NA, APAC, EMEA") is True
+    assert filters.is_us_remote("Remote - EMEA, Remote - NA") is True
+
+
+def test_canadian_ontario_is_not_read_as_california():
+    """"CA-Ontario-Toronto" must read as Canada, not the CA state code."""
+    assert filters.is_us_remote("CA-Ontario-Toronto Remote") is False
+
+
+@pytest.mark.parametrize("location", [
+    "Remote in Europe",     # "in" must not read as Indiana
+    "Remote or nothing",    # "or" must not read as Oregon
+    "Remote, ok then",      # "ok" must not read as Oklahoma
+    "Remote, hi there",     # "hi" must not read as Hawaii
+    "Remote, call me",      # "me" must not read as Maine
+])
+def test_lowercase_english_words_are_not_read_as_state_codes(location):
+    """These must not register as a US signal. Whether the posting is then kept
+    is a separate question - "Remote in Europe" is dropped for naming Europe,
+    while "Remote or nothing" is kept for naming no country at all."""
+    assert filters.has_us_marker(location) is False
+
+
+def test_remote_naming_no_country_is_kept():
+    assert filters.is_us_remote("Remote or nothing") is True
+    assert filters.is_us_remote("Remote in Europe") is False
+
+
+def test_filter_us_remote_over_a_batch():
+    batch = [
+        posting(url="https://example.com/1", location="Remote, AMER"),
+        posting(url="https://example.com/2", location="Remote - India"),
+        posting(url="https://example.com/3", location="London"),
+    ]
+    assert [p["url"] for p in filters.filter_us_remote(batch)] == ["https://example.com/1"]
+
+
+# --- dedupe ----------------------------------------------------------------
+
+def test_dedupe_keeps_the_us_copy_of_a_cloned_req():
+    batch = [
+        posting(url="https://example.com/de", company="ElevenLabs",
+                title="Enterprise Solutions Engineer", location="Germany"),
+        posting(url="https://example.com/na", company="ElevenLabs",
+                title="Enterprise Solutions Engineer", location="Remote, United States"),
+        posting(url="https://example.com/jp", company="ElevenLabs",
+                title="Enterprise Solutions Engineer", location="Japan"),
+    ]
+    kept = filters.dedupe(batch)
+    assert len(kept) == 1
+    assert kept[0]["url"] == "https://example.com/na"
+
+
+def test_dedupe_leaves_distinct_titles_alone():
+    batch = [
+        posting(url="https://example.com/1", company="Acme", title="Support Engineer"),
+        posting(url="https://example.com/2", company="Acme", title="Solutions Engineer"),
+    ]
+    assert len(filters.dedupe(batch)) == 2
+
+
+def test_dedupe_does_not_merge_across_companies():
+    batch = [
+        posting(url="https://example.com/1", company="Acme", title="Support Engineer"),
+        posting(url="https://example.com/2", company="Globex", title="Support Engineer"),
+    ]
+    assert len(filters.dedupe(batch)) == 2
+
+
+def test_dedupe_is_case_and_whitespace_insensitive_on_the_title():
+    batch = [
+        posting(url="https://example.com/1", company="Acme",
+                title="Support  Engineer", location="Berlin"),
+        posting(url="https://example.com/2", company="Acme",
+                title="SUPPORT ENGINEER", location="Remote, US"),
+    ]
+    kept = filters.dedupe(batch)
+    assert len(kept) == 1
+    assert kept[0]["url"] == "https://example.com/2"

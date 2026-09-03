@@ -34,6 +34,7 @@ Useful flags on `run`:
 | `--sources greenhouse,ashby,hn` | poll only a subset |
 | `--match-description` | also match include keywords in the description, not just the title |
 | `--tier` | group the digest by tier instead of by company, so it reads in apply order |
+| `--no-us-remote` | disable the US-remote filter, which is **on by default** |
 | `--include-unverified` | poll companies marked `unverified` (skipped by default) |
 | `-v` | mirror the log to stderr as well as `jobwatch.log` |
 
@@ -109,6 +110,37 @@ One interpretation worth knowing: the include rule is applied to the **title**
 by default, because a keyword like "ai engineer" appears in a large share of
 descriptions at these companies and would swamp the digest. `--match-description`
 turns on description matching, and the digest says which field matched.
+
+## US-remote filter
+
+**On by default** for both `run` and `list`; `--no-us-remote` turns it off.
+
+A posting is kept only if its **location** contains "remote" *and* either names
+the US (United States, USA, US, North America, NA, AMER, Americas, or a state
+name or code) or names no country at all ("Remote", "Remote, Global"). Anything
+naming a foreign country, city or region is dropped.
+
+Only the location is consulted. A description mentioning the US proves nothing
+about where the role is based.
+
+Two ordering details carry the weight:
+
+- **Strong US tokens are checked first**, so a multi-region req like
+  `Remote - NA, APAC, EMEA` survives on the strength of NA.
+- **State codes are checked last**, after the foreign-place list, so
+  `CA-Ontario-Toronto` reads as Canada rather than California. State codes are
+  also matched **case-sensitively against the raw location**, so the English
+  words "in", "or", "ok", "me" and "hi" cannot be read as Indiana, Oregon,
+  Oklahoma, Maine or Hawaii.
+
+On the current data this takes 224 matches down to 35.
+
+## Dedupe
+
+Reqs that share a company and title and differ only by location are collapsed to
+one, keeping the US/AMER copy. ElevenLabs posts the same Enterprise Solutions
+Engineer req once per country — 18 rows for one job. Applied after the US-remote
+filter on `run`, and on read for `list`. 35 rows down to 31.
 
 ## Tiers
 

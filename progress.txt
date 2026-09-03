@@ -141,3 +141,36 @@ exercised on its failure branch. .env does not exist. To finish:
      digest. To send a real one, either wait for tomorrow's postings or delete
      jobwatch.db first to re-baseline.
   3. Only after a real send has landed should the 7 AM schedule be trusted.
+
+## 2026-09-03 — us-remote + dedupe
+
+20. --us-remote filter, on by default for run and list (--no-us-remote disables).
+    Location must contain "remote" AND either name the US (United States/USA/US/
+    North America/NA/AMER/Americas/state name or code) or name no country at all.
+    Only the location is consulted - a description mentioning the US says nothing
+    about where the role is based.
+    Two ordering details matter: strong US tokens are checked BEFORE the foreign
+    list so "Remote - NA, APAC, EMEA" survives; state codes are checked AFTER it
+    so "CA-Ontario-Toronto" reads as Canada, not California. State codes match
+    case-sensitively on the raw string so "in"/"or"/"ok"/"me"/"hi" are not read
+    as Indiana/Oregon/Oklahoma/Maine/Hawaii.
+    Validated against all 133 distinct locations in the stored data: every kept
+    location is US, every dropped one is genuinely foreign.
+21. Dedupe on company + normalized title, keeping the US/AMER copy. ElevenLabs
+    posts one req per country (18 rows for one job).
+22. 148 tests passing.
+
+Pipeline on live data: 8,9xx scanned -> 224 content matches -> 35 us-remote -> 31
+after dedupe. Tier 1: 9, Tier 2: 7, Tier 3: 15.
+
+## STOP POINT — 2026-09-03
+jobwatch.db has been DELETED on purpose, so the next `run --email` produces a
+full 31-posting digest rather than an empty one. Do not run anything that
+repopulates it before that send.
+
+BLOCKED on: .env does not exist yet. Jacob is creating it with real SMTP values.
+Once he confirms, run:
+    .venv/Scripts/python.exe jobwatch.py run --email --tier
+and confirm the mail actually arrives. The email path has still never sent a
+real message - it has only ever been exercised on its failure branch. Until a
+send lands, the 7 AM schedule is not trustworthy.

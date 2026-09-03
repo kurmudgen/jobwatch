@@ -44,6 +44,14 @@ def cmd_run(args) -> int:
     matches = filters.evaluate_all(postings, match_description=args.match_description)
     log.info("%d postings matched the filters", len(matches))
 
+    if args.us_remote:
+        before = len(matches)
+        matches = filters.filter_us_remote(matches)
+        log.info("us-remote filter: %d -> %d", before, len(matches))
+    before = len(matches)
+    matches = filters.dedupe(matches)
+    log.info("dedupe: %d -> %d", before, len(matches))
+
     conn = store.connect()
     try:
         new_rows = store.upsert_many(conn, matches)
@@ -87,6 +95,9 @@ def cmd_list(args) -> int:
         rows = store.recent(conn, days=args.days)
     finally:
         conn.close()
+    if args.us_remote:
+        rows = filters.filter_us_remote(rows)
+    rows = filters.dedupe(rows)
     if args.only_tier:
         rows = [r for r in rows if filters.compute_tier(r.get("title") or "") == args.only_tier]
     print(digest.render(
@@ -188,6 +199,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="group the digest by tier (1 core, 2 adjacent, 3 rest) instead of by company",
     )
     run.add_argument(
+        "--us-remote",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="keep only US-remote postings (default: on; --no-us-remote disables)",
+    )
+    run.add_argument(
         "--include-unverified",
         action="store_true",
         help="poll companies marked unverified in companies.yaml",
@@ -201,6 +218,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     listing.add_argument(
         "--only-tier", type=int, choices=(1, 2, 3), help="show only this tier"
+    )
+    listing.add_argument(
+        "--us-remote",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="keep only US-remote postings (default: on; --no-us-remote disables)",
     )
     listing.set_defaults(func=cmd_list)
 
