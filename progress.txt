@@ -174,3 +174,45 @@ Once he confirms, run:
 and confirm the mail actually arrives. The email path has still never sent a
 real message - it has only ever been exercised on its failure branch. Until a
 send lands, the 7 AM schedule is not trustworthy.
+
+## 2026-09-03 (later) — cron dropped, connector delivery
+
+23. Deleted the Vercel project (it auto-imported the new public repo and failed
+    every build; a Python CLI is not deployable there).
+24. Dropped the scheduled job entirely per Jacob: no cron line, no Task Scheduler
+    block, run.sh removed (its only purpose was cron), .env deleted. mailer.py and
+    --email remain as a documented optional path, marked never-exercised.
+25. Added digest.render_html() and --html.
+
+### The delivery bug that took three sends to pin down
+Gmail rewrites every URL in a message body into google.com/url?q=...&ust=1788...
+The connector's quoted-printable encoder does not escape "=" as "=3D", so the
+decoder reads the "=17" inside "ust=17..." as a QP escape for byte 0x17 and eats
+it. Every unix-ms timestamp starts with 17, so this breaks EVERY link, forever.
+It affects html href attributes too - an early test seemed to show HTML surviving,
+but only because that test's markup was accidentally escaped, so Gmail
+auto-linkified plain text and inserted its own anchor after encoding. Sending real
+<a href> reproduced the corruption.
+Fix: send the digest as a base64 ATTACHMENT with no URLs in the body. Verified:
+attachment present, 31 hrefs, zero google.com/url wrappers, zero control bytes.
+Python smtplib has neither problem (verified byte-identical round trip, 32/32
+URLs intact) - relevant only if SMTP is ever configured.
+
+## STOP POINT — 2026-09-03
+Working state. 152 tests passing. jobwatch.db holds the current 31 matches, so
+the next run reports only what is genuinely new.
+
+Daily workflow, no credentials and no schedule:
+    ask Claude Code: "run jobwatch and send me the digest"
+    -> python jobwatch.py run --tier
+    -> python jobwatch.py list --days 1 --html
+    -> base64 that HTML, send as a text/html attachment, no URLs in the body
+    -> re-read the sent message to confirm no google.com/url and no control bytes
+
+Open items:
+- 10 companies still unverified (Expo, Retool, GitHub, Fly.io, HashiCorp, dbt Labs,
+  Weights & Biases, Shield AI, Second Front, Govini). Adding a 4th ATS would
+  recover some.
+- Supabase "Support Engineer (EMEA - Weekends)" passes the US-remote filter because
+  its location field says "Remote, Global" while the title says EMEA. Filter is
+  behaving as specified; the posting is mislabelled at the source.
