@@ -1,0 +1,29 @@
+{
+  "id": 49522897,
+  "title": "Ask HN: Who is hiring? (September 2026)",
+  "author": "whoishiring",
+  "created_at": "2026-09-01T15:01:17.000Z",
+  "children": [
+    {
+      "id": 49522903,
+      "author": "thelastofthelas",
+      "created_at": "2026-09-01T15:01:54.000Z",
+      "text": "Modash.io | Senior Product Engineer | Remote (Europe) | Full-time | \u20ac75k\u2013110k | <a href=\"https:&#x2F;&#x2F;modash.io\" rel=\"nofollow\">https:&#x2F;&#x2F;modash.io</a><p>Modash helps brands find, manage, and pay creators - and helps creators earn a living.<p>The product looks simple on the surface. Underneath, we index 380M+ public creator profiles across Instagram, TikTok, and YouTube so that 1,700+ brands search, evaluate, manage, and pay creators without drowning in spreadsheets and tabs.<p>We&#x27;re looking for Senior Product Engineers who like owning ambiguous problems end-to-end. No perfectly shaped tickets. You talk to customers, understand messy workflows, make product decisions, ship, and own whether it actually works.<p>The problems we care about:<p>- How do you make a 380M-profile dataset feel fast, trustworthy, and easy to explore?<p>- How do you turn chaotic influencer marketi",
+      "children": []
+    },
+    {
+      "id": 49522912,
+      "author": "R_R",
+      "created_at": "2026-09-01T15:02:11.000Z",
+      "text": "Quill | Fullstack SWE | Full-time | Remote, PT&#x2F;ET hours preferred | $150 - 210K USD + equity | <a href=\"https:&#x2F;&#x2F;quill.co&#x2F;\" rel=\"nofollow\">https:&#x2F;&#x2F;quill.co&#x2F;</a><p>I\u2019m a co-founder of Quill, a fullstack SDK for adding customer-facing analytics &amp; data features to your app. Backed by YCombinator &amp; top-tier SV-based investors (fundraising not publicly disclosed; happy to share any details when we chat).<p>Some examples of how customers get value from Quill:\n\u2022 pre-IPO fintech adds custom reporting &amp; data export features to their money movement product.\n\u2022 Series B healthtech is now able to deliver completely custom in-product reports &amp; dashboards to every enterprise customer they onboard.\n\u2022 Series A govtech adds analytics and reporting capabilities within their existing agent&#x2F;chat product.<p>Reasons you\u2019d love working with us:\n\u2022 Work with ",
+      "children": []
+    },
+    {
+      "id": 49522929,
+      "author": "eterps",
+      "created_at": "2026-09-01T15:03:02.000Z",
+      "text": "Open Education Applications &#x2F; Neon | Senior&#x2F;Lead Platform &amp; DevOps Engineer, Senior Frontend Engineer, Senior Full-Stack Engineer | Utrecht, The Netherlands | HYBRID | DUTCH REQUIRED<p>Please note: working proficiency in Dutch is strictly required for these roles, and we kindly ask for no automated applications. The rest of this post will continue in Dutch.<p>Wij zijn een non-profit die zich inzet om lesmateriaal voor scholen beter, betaalbaarder en flexibeler te maken, in zowel digitale als gedrukte vorm.<p>Werktijden en kantoordagen zijn flexibel en worden in overleg bepaald op basis van de rol. Wij bieden een competitief salaris.<p>Technologiestack: Git monorepo, TypeScript, Yjs en React, een beetje Python, OpenTofu&#x2F;Terraform, Scaleway, managed PostgreSQL en managed Kubernetes.<p>Openstaande rollen:<p>- Senior&#x2F;Lead Platform &amp; DevOps Engineer<p>- Senior Back",
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "jobs": [
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/netlify/jobs/4224129002",
+      "data_compliance": [
+        {
+          "type": "gdpr",
+          "requires_consent": false,
+          "requires_processing_consent": false,
+          "requires_retention_consent": false,
+          "retention_period": null,
+          "demographic_data_consent_applies": false
+        }
+      ],
+      "internal_job_id": 4197639002,
+      "location": {
+        "name": "Remote"
+      },
+      "metadata": null,
+      "id": 4224129002,
+      "updated_at": "2026-04-01T01:00:24-04:00",
+      "requisition_id": "32",
+      "title": "Your Chance to Join Our Talent Community!",
+      "company_name": "Netlify",
+      "first_published": "2019-03-05T17:01:04-05:00",
+      "language": "en",
+      "application_deadline": null,
+      "content": "&lt;h3&gt;Don&#39;t see an opening that&#39;s right for you?&lt;/h3&gt;\n&lt;p&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;If you are interested in us but don&#39;t see an open role that matches your background please join our Talent Community! Our mission is to build a better web and we welcome you to stay connected with us as we grow. Feel free to apply through the link below to stay updated!&lt;/span&gt;&lt;/p&gt;\n&lt;h3&gt;About Netlify&lt;/h3&gt;\n&lt;p&gt;At Netlify, we\u2019re on a mission to build a better web by making it easier than ever to build, deploy, and scale web applications. ",
+      "departments": [
+        {
+          "id": 4010910002,
+          "name": "G&A",
+          "child_ids": [
+            4052470002,
+            4052466002,
+            4052468002,
+            4065671002
+          ],
+          "parent_id": null
+        }
+      ],
+      "offices": [
+        {
+          "id": 4043380002,
+          "name": "Remote",
+          "location": "Remote",
+          "child_ids": [],
+          "parent_id": null
+        }
+      ],
+      "ai_disclaimer": null,
+      "include_ai_disclaimer": false,
+      "ai_opt_out_request_url": "http://app2.greenhouse.io/ai_opt_out_request/job_post/4224129002/ai_opt_out"
+    }
+  ]
+}

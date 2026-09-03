@@ -202,6 +202,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    # Job descriptions routinely contain em dashes, curly quotes and CJK text.
+    # On Windows stdout defaults to cp1252, which raises UnicodeEncodeError on
+    # anything outside it - that would kill an otherwise complete run at the
+    # moment it prints the digest. Force UTF-8 and never fail on a character.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     args = build_parser().parse_args(argv)
     return args.func(args)
 

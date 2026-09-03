@@ -51,3 +51,55 @@ host proves nothing.
 - pytest suite (filters + one normalizer per source, from fixtures)
 - run.sh wrapper + README (cron 7am + Windows Task Scheduler)
 - first real run, show the digest
+
+### Done (continued)
+12. tests/ — 71 pytest tests. test_filters.py covers every include keyword, every
+    exclusion, the technical-account-manager carve-out, word-boundary edge cases
+    (internal != intern, VPC != VP), the on-site-unless-remote rule and all flag
+    types. test_normalizers.py covers one normalizer per source against small
+    payloads saved from the live APIs in tests/fixtures/.
+13. run.sh — cron wrapper: cd's to its own dir, picks the venv interpreter,
+    sources .env (cron has almost no environment).
+14. README.md — commands, filter semantics, per-source notes, the verification
+    results table, cron line for 7:00 AM and the Windows Task Scheduler equivalent.
+
+### First real run (2026-09-02 22:39)
+43/43 sources succeeded, zero errors. 8,978 raw postings -> 319 matches, all new.
+By source: greenhouse 145, ashby 102, lever 61, hn 10, remoteok 1, remotive 0.
+264 marked remote, 81 flagged for manual review.
+Second run scanned 8,972 and reported 0 new, so the seen/new logic is correct.
+
+### Two bugs found and fixed by running it for real
+- HN thread selection returned the March 2020 thread. Algolia's /search endpoint is
+  relevance-ranked and returns 20 arbitrary hits, none recent, so "newest hit"
+  was newest-of-an-old-sample. Now queries /search_by_date filtered to the
+  whoishiring account, with /search kept as a fallback.
+- On Windows stdout is cp1252, so the digest wrote an em dash as byte 0x97 and any
+  character outside cp1252 would have raised UnicodeEncodeError *after* the whole
+  run completed. main() now reconfigures stdout/stderr to UTF-8 with
+  errors="replace".
+
+## STOP POINT — 2026-09-02
+Everything in the spec is built, tested and has been run for real once against live
+APIs. jobwatch.db holds 319 matched postings, so the next `run` reports only what
+appeared since. Nothing is half-finished.
+
+To pick up from here:
+1. `.venv/Scripts/python.exe -m pytest`            (expect 71 passed)
+2. `.venv/Scripts/python.exe jobwatch.py run`      (expect a short digest)
+3. Fill in .env from .env.example and try `run --email` — the SMTP path has been
+   exercised only on its failure branch (missing env vars -> clean message, exit 2).
+   It has never actually sent mail.
+4. Schedule it: see the cron line and the Task Scheduler block in README.md.
+
+Open items, none blocking:
+- 10 companies remain unverified (Expo, Retool, GitHub, Fly.io, HashiCorp, dbt Labs,
+  Weights & Biases, Shield AI, Second Front, Govini). No public Greenhouse/Lever/
+  Ashby board found under any variant. Adding a fourth ATS (Workday, Rippling,
+  Ripplematch, Ashby-embedded) would recover some of them.
+- The digest is noisy at 319 on a first run because everything is new. Day two will
+  be a handful. If it stays noisy, the on-site rule only drops postings that say
+  "hybrid"/"onsite" out loud — a location-is-a-city-and-not-remote rule would cut
+  more, but that goes beyond the spec and would hide genuinely remote-friendly roles.
+- Remotive's software-dev feed currently returns only 18 postings and matched none.
+  That is the API's real size right now, not a bug.

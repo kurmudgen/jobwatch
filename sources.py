@@ -273,6 +273,13 @@ def fetch_remoteok() -> "list[dict]":
 
 # --- Hacker News "Who is hiring" -------------------------------------------
 
+# The relevance-ranked /search endpoint returns 20 arbitrary hits - as of this
+# writing its newest "Who is hiring" story is from 2020 - so ask the date-sorted
+# endpoint first and keep the relevance one only as a fallback.
+HN_SEARCH_BY_DATE_URL = (
+    'https://hn.algolia.com/api/v1/search_by_date?query="Ask HN: Who is hiring"'
+    "&tags=story,author_whoishiring&hitsPerPage=10"
+)
 HN_SEARCH_URL = (
     'https://hn.algolia.com/api/v1/search?query="Ask HN: Who is hiring"&tags=story'
 )
@@ -325,7 +332,13 @@ def normalize_hn(item: dict) -> "list[dict]":
 
 
 def fetch_hn() -> "list[dict]":
-    thread = find_hn_thread(_get_json(HN_SEARCH_URL))
+    thread = None
+    try:
+        thread = find_hn_thread(_get_json(HN_SEARCH_BY_DATE_URL))
+    except Exception as exc:  # noqa: BLE001 - fall back to the relevance search
+        log.warning("hn: date-sorted search failed (%s), falling back", exc)
+    if not thread:
+        thread = find_hn_thread(_get_json(HN_SEARCH_URL))
     if not thread:
         raise RuntimeError("no 'Ask HN: Who is hiring' thread found in search results")
     item_id = thread.get("objectID") or thread.get("story_id")
