@@ -14,6 +14,9 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# generated digests
+# generated digests and scratch output
 digest.md
-cron.log
+digest.html
+digest_b64.txt
+tier1.md
+verify-report.txt
