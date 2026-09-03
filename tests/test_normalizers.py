@@ -134,3 +134,41 @@ def test_hn_skips_empty_comments():
 ])
 def test_timestamp_normalization(value, expected_prefix):
     assert sources._iso(value).startswith(expected_prefix)
+
+
+def test_app_password_spaces_are_stripped(monkeypatch):
+    """Google shows an App Password as "abcd efgh ijkl mnop"; the password
+    itself has no spaces, so pasting it as displayed must still authenticate."""
+    import mailer
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, *a, **kw): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def ehlo(self): pass
+        def starttls(self): pass
+        def login(self, user, password): sent["password"] = password
+        def send_message(self, msg): sent["msg"] = msg
+
+    for key, value in {
+        "SMTP_HOST": "smtp.example.com", "SMTP_PORT": "587",
+        "SMTP_USER": "me@example.com", "SMTP_PASS": "abcd efgh ijkl mnop",
+        "EMAIL_TO": "me@example.com",
+    }.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setattr(mailer.smtplib, "SMTP", FakeSMTP)
+
+    mailer.send_digest("jobwatch: 1 new match", "# digest\n")
+    assert sent["password"] == "abcdefghijklmnop"
+
+
+def test_a_blank_password_is_reported_as_missing(monkeypatch):
+    import mailer
+    for key, value in {
+        "SMTP_HOST": "smtp.example.com", "SMTP_PORT": "587",
+        "SMTP_USER": "me@example.com", "SMTP_PASS": "",
+        "EMAIL_TO": "me@example.com",
+    }.items():
+        monkeypatch.setenv(key, value)
+    assert "SMTP_PASS" in mailer.missing_env()

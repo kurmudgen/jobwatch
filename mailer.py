@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import smtplib
 from email.message import EmailMessage
 
@@ -29,7 +30,10 @@ def send_digest(subject: str, body: str) -> None:
     host = os.environ["SMTP_HOST"]
     port = int(os.environ["SMTP_PORT"])
     user = os.environ["SMTP_USER"]
-    password = os.environ["SMTP_PASS"]
+    # Google displays an App Password as "abcd efgh ijkl mnop". The password
+    # itself has no spaces, so pasting it as shown would otherwise fail auth
+    # with a bare "Username and Password not accepted".
+    password = re.sub(r"\s+", "", os.environ["SMTP_PASS"])
     recipients = [addr.strip() for addr in os.environ["EMAIL_TO"].split(",") if addr.strip()]
     sender = os.environ.get("EMAIL_FROM") or user
 
