@@ -48,9 +48,12 @@ Useful flags on `run`:
 | Remotive | `remotive.com/api/remote-jobs?category=software-dev` |
 | RemoteOK | `remoteok.com/api` (browser User-Agent required) |
 | HN Who Is Hiring | Algolia search for the current thread, then its comments |
+| USAJOBS | `data.usajobs.gov/api/search` (needs a free key, see below) |
 
 Every posting is normalized to `source, company, title, location, remote,
-employment_type, url, posted_at, description_text`. Each request has a 20s
+employment_type, url, posted_at, description_text, salary_min, salary_max`.
+Only USAJOBS publishes a salary range; the two salary fields are `None`
+everywhere else. Each request has a 20s
 timeout and one retry, and each source is wrapped in its own try/except, so a
 dead endpoint costs you that source and nothing else. Failures are listed at the
 bottom of the digest and written to `jobwatch.log`.
@@ -60,6 +63,59 @@ bottom of the digest and written to `jobwatch.log`.
 asks the date-sorted `/search_by_date` endpoint first (filtered to the
 `whoishiring` account) and keeps `/search` only as a fallback. Each top-level
 comment is one posting; the company is the text before the first pipe.
+
+## USAJOBS (federal)
+
+Needs a free key from developer.usajobs.gov. Put both values in `.env` (see
+`.env.example`); the key is **never** committed, and `.env` is gitignored:
+
+```
+USAJOBS_EMAIL=the address you registered the key with
+USAJOBS_KEY=your key
+```
+
+`USAJOBS_EMAIL` is sent as the `User-Agent` header, which the API requires, and
+the key as `Authorization-Key`. Without them the source raises a clear error,
+which `collect()` catches like any other source failure — the run continues and
+the digest lists it under "Sources that failed this run".
+
+Four searches run per poll, one per keyword, de-duplicated on URL:
+
+```
+JobCategoryCode=2210        IT Specialist
+Keyword=                    solutions | customer support | applications | cybersecurity
+RemoteIndicator=True
+PayGradeLow=11
+```
+
+`remote` is set True **only** on an explicit `RemoteIndicator`, or when the
+location says "Anywhere in the U.S." or "Location Negotiable After Selection".
+The indicator has appeared in two places across API revisions, so both are
+checked, and the string `"false"` is not treated as truthy.
+
+Salaries are annualized before comparison — a per-hour posting is multiplied by
+the 2087-hour OPM work year — so hourly and yearly roles sort against each other
+correctly.
+
+**The include list does not apply to USAJOBS, and it can't.** Federal 2210
+titles read `IT Specialist (CUSTSPT)`, `IT Specialist (APPSW)`,
+`IT Cybersecurity Specialist (INFOSEC)`. None of them contain "engineer", so the
+private-sector include keywords match almost none of them — the source would
+fetch hundreds of postings and silently discard nearly all of them. For USAJOBS
+the API query *is* the include gate: category 2210, one of four keywords, remote,
+GS-11 and above is already tighter than a title regex. Exclusions, the on-site
+rule and every flag still apply, and the digest records which keyword matched
+with `matched_in: usajobs query`.
+
+`supervisory` was added to the exclusions as the federal spelling of a
+management role, alongside manager, director, head of and vp.
+
+**Caveat:** the normalizer follows USAJOBS' published Search API schema but has
+**not** been checked against a live response — the endpoint returns 401 to every
+request without a real key. Every field access is defensive, and
+`tests/fixtures/usajobs.json` is hand-built from the documented schema rather
+than captured. Re-capture that fixture and re-check the field names the first
+time a key is available.
 
 ## Filters
 
@@ -95,6 +151,9 @@ days per week in office".
 - `eligibility:` the description says "not eligible", "excluding" or "except"
 - `states:` two or more US states are named, which usually means a
   hire-in-these-states-only list — check by hand whether Montana is on it
+- `not-open:` the eligibility text says "current federal employees only" or
+  "internal to agency", so the announcement is closed to the public. USAJOBS
+  puts this in `WhoMayApply`, which the normalizer folds into the description
 - `clearance:` the description mentions clearance, TS/SCI, top secret, DoD, or
   "secret" within a few words of "clearance". Bare "secret" is not enough — it
   was flagging every Supabase support role because the company blurb says "our
@@ -146,6 +205,9 @@ filter on `run`, and on read for `list`. 35 rows down to 31.
 
 Every match is assigned a tier, shown in the digest and used to sort it:
 
+USAJOBS matches are not tiered. They go in their own **Federal (USAJOBS)**
+section, sorted by salary max descending, with unpublished salaries last.
+
 | Tier | Rule |
 | --- | --- |
 | 1 | title contains support, solutions, implementation or technical account manager, **and** no seniority word |
@@ -165,7 +227,10 @@ so rows written before tiering existed sort correctly with no migration.
 
 ## Storage
 
-SQLite at `jobwatch.db`, table `postings`, primary key `url`. Each run inserts
+SQLite at `jobwatch.db`, table `postings`, primary key `url`. Columns added
+after first release are applied by an additive migration on `connect()` —
+`store.LATER_COLUMNS` is ADD-only, never a drop or rewrite, so an older database
+keeps every row. Each run inserts
 postings it has never seen and bumps `last_seen` / `seen_count` on ones it has.
 Only rows that were new to the database appear in the digest. `list --days N`
 reads back by `first_seen`.

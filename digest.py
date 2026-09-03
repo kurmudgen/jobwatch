@@ -37,6 +37,47 @@ def _short_date(value: str) -> str:
         return str(value)[:10]
 
 
+FEDERAL_SOURCE = "usajobs"
+FEDERAL_HEADING = "Federal (USAJOBS)"
+
+
+def _split_federal(postings):
+    """(federal, everything else). Federal gets its own digest section."""
+    federal = [p for p in postings if p.get("source") == FEDERAL_SOURCE]
+    rest = [p for p in postings if p.get("source") != FEDERAL_SOURCE]
+    return federal, rest
+
+
+def _by_salary_desc(postings):
+    """Highest salary max first. Postings with no published range sort last,
+    then alphabetically so the order is stable."""
+    return sorted(
+        postings,
+        key=lambda p: (
+            -(p.get("salary_max") or 0),
+            (p.get("company") or "").lower(),
+            (p.get("title") or "").lower(),
+        ),
+    )
+
+
+def _money(value):
+    if not value:
+        return ""
+    return "$" + format(int(round(float(value))), ",")
+
+
+def _salary_text(posting) -> str:
+    low, high = posting.get("salary_min"), posting.get("salary_max")
+    if high and low:
+        return _money(low) + " - " + _money(high)
+    if high:
+        return "up to " + _money(high)
+    if low:
+        return "from " + _money(low)
+    return "salary not published"
+
+
 def _render_posting(posting: dict, show_company: bool, lines: list) -> None:
     title_text = (posting.get("title") or "(untitled)").strip()
     prefix = (posting.get("company") or "").strip() + " - " if show_company else ""
@@ -78,13 +119,16 @@ def render(
 ) -> str:
     today = dt.datetime.now().strftime("%Y-%m-%d")
     lines = ["# " + title + " - " + today, ""]
+    federal, postings = _split_federal(postings)
 
-    if not postings:
+    if not postings and not federal:
         lines.append("_" + empty_note + "_")
     else:
-        flagged = sum(1 for p in postings if p.get("flags"))
-        summary = str(len(postings)) + " match" + ("" if len(postings) == 1 else "es")
-        summary += " across " + str(len({p.get("company") for p in postings})) + " companies"
+        total = len(postings) + len(federal)
+        flagged = sum(1 for p in postings + federal if p.get("flags"))
+        summary = str(total) + " match" + ("" if total == 1 else "es")
+        summary += " across " + str(
+            len({p.get("company") for p in postings + federal})) + " companies"
         if flagged:
             summary += " (" + str(flagged) + " flagged for manual review)"
         lines.append(summary)
@@ -92,10 +136,11 @@ def render(
         tally = {1: 0, 2: 0, 3: 0}
         for posting in postings:
             tally[_tier(posting)] += 1
-        lines.append(
-            "Tier 1: " + str(tally[1]) + " | Tier 2: " + str(tally[2])
-            + " | Tier 3: " + str(tally[3])
-        )
+        tier_line = ("Tier 1: " + str(tally[1]) + " | Tier 2: " + str(tally[2])
+                     + " | Tier 3: " + str(tally[3]))
+        if federal:
+            tier_line += " | Federal: " + str(len(federal))
+        lines.append(tier_line)
         lines.append("")
 
         if by_tier:
@@ -117,6 +162,32 @@ def render(
                                                             (p.get("title") or "").lower())):
                     _render_posting(posting, show_company=False, lines=lines)
                 lines.append("")
+
+    if federal:
+        lines.append("## " + FEDERAL_HEADING + " (" + str(len(federal)) + ")")
+        lines.append("_sorted by salary max, highest first_")
+        lines.append("")
+        for posting in _by_salary_desc(federal):
+            lines.append("- **" + (posting.get("company") or "").strip()
+                         + " - " + (posting.get("title") or "(untitled)").strip() + "**")
+            bits = [_salary_text(posting)]
+            location = (posting.get("location") or "").strip()
+            if location:
+                bits.append(location[:120])
+            if posting.get("remote"):
+                bits.append("remote")
+            employment_type = (posting.get("employment_type") or "").strip()
+            if employment_type:
+                bits.append(employment_type)
+            posted = _short_date(posting.get("posted_at") or "")
+            if posted:
+                bits.append("posted " + posted)
+            lines.append("  - " + " | ".join(bits))
+            flag_text = _flag_line(posting)
+            if flag_text:
+                lines.append("  - FLAGS: " + flag_text)
+            lines.append("  - " + (posting.get("url") or ""))
+        lines.append("")
 
     if errors:
         lines.append("")
@@ -149,25 +220,27 @@ def render_html(
         return _html.escape(str(text or ""))
 
     today = dt.datetime.now().strftime("%Y-%m-%d")
+    federal, postings = _split_federal(postings)
     out = ['<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;'
            'font-size:14px;line-height:1.5;color:#111">']
     out.append("<h2 style='margin:0 0 4px'>" + esc(title) + " &ndash; " + today + "</h2>")
 
-    if not postings:
+    if not postings and not federal:
         out.append("<p><em>" + esc(empty_note) + "</em></p></div>")
         return "\n".join(out)
 
     tally = {1: 0, 2: 0, 3: 0}
     for posting in postings:
         tally[_tier(posting)] += 1
-    out.append(
-        "<p style='margin:0 0 16px;color:#555'>"
-        + str(len(postings)) + " matches across "
-        + str(len({p.get("company") for p in postings})) + " companies"
-        + " &middot; Tier 1: " + str(tally[1])
-        + " &middot; Tier 2: " + str(tally[2])
-        + " &middot; Tier 3: " + str(tally[3]) + "</p>"
-    )
+    summary = ("<p style='margin:0 0 16px;color:#555'>"
+               + str(len(postings) + len(federal)) + " matches across "
+               + str(len({p.get("company") for p in postings + federal})) + " companies"
+               + " &middot; Tier 1: " + str(tally[1])
+               + " &middot; Tier 2: " + str(tally[2])
+               + " &middot; Tier 3: " + str(tally[3]))
+    if federal:
+        summary += " &middot; Federal: " + str(len(federal))
+    out.append(summary + "</p>")
 
     groups = (
         [(TIER_LABELS[t], [p for p in postings if _tier(p) == t]) for t in (1, 2, 3)]
@@ -198,6 +271,35 @@ def render_html(
             bits.append(esc(posting.get("source")))
             out.append("<span style='color:#666'>" + " &middot; ".join(b for b in bits if b)
                        + "</span>")
+            flags = posting.get("flags") or []
+            if flags:
+                out.append("<br><span style='color:#b3261e'>FLAGS: "
+                           + esc(", ".join(flags)) + "</span>")
+            out.append("</li>")
+        out.append("</ul>")
+
+    if federal:
+        out.append("<h3 style='margin:20px 0 8px;border-bottom:1px solid #ddd;"
+                   "padding-bottom:4px'>" + esc(FEDERAL_HEADING)
+                   + " (" + str(len(federal)) + ")</h3>")
+        out.append("<p style='margin:0 0 8px;color:#888;font-size:12px'>"
+                   "sorted by salary max, highest first</p>")
+        out.append("<ul style='margin:0;padding-left:18px'>")
+        for posting in _by_salary_desc(federal):
+            out.append("<li style='margin-bottom:10px'>")
+            out.append("<a href='" + esc(posting.get("url")) + "' style='font-weight:600;"
+                       "color:#0b57d0;text-decoration:none'>"
+                       + esc(posting.get("company")) + " &ndash; "
+                       + esc(posting.get("title")) + "</a><br>")
+            bits = ["<strong>" + esc(_salary_text(posting)) + "</strong>"]
+            if posting.get("location"):
+                bits.append(esc(posting.get("location")))
+            if posting.get("employment_type"):
+                bits.append(esc(posting.get("employment_type")))
+            posted = _short_date(posting.get("posted_at") or "")
+            if posted:
+                bits.append("posted " + posted)
+            out.append("<span style='color:#666'>" + " &middot; ".join(bits) + "</span>")
             flags = posting.get("flags") or []
             if flags:
                 out.append("<br><span style='color:#b3261e'>FLAGS: "

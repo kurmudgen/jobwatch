@@ -1,0 +1,110 @@
+{
+  "_note": "HAND-BUILT from the published USAJOBS Search API schema, not captured from a live response: the endpoint returns 401 without a real Authorization-Key. Re-capture this fixture the first time a key is available, and re-check the field names against what actually comes back.",
+  "SearchResult": {
+    "SearchResultCount": 4,
+    "SearchResultCountAll": 4,
+    "SearchResultItems": [
+      {
+        "MatchedObjectId": "830000100",
+        "MatchedObjectDescriptor": {
+          "PositionID": "CISA-26-0001",
+          "PositionTitle": "IT Specialist (Customer Support)",
+          "PositionURI": "https://www.usajobs.gov/job/830000100",
+          "ApplyURI": ["https://www.usajobs.gov/job/830000100/apply"],
+          "PositionLocationDisplay": "Anywhere in the U.S. (remote job)",
+          "PositionLocation": [
+            {"LocationName": "Anywhere in the U.S. (remote job)", "CountryCode": "United States"}
+          ],
+          "OrganizationName": "Cybersecurity and Infrastructure Security Agency",
+          "DepartmentName": "Department of Homeland Security",
+          "JobCategory": [{"Name": "Information Technology Management", "Code": "2210"}],
+          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
+          "PositionOfferingType": [{"Name": "Permanent", "Code": "15317"}],
+          "QualificationSummary": "Experience troubleshooting enterprise software for end users.",
+          "PositionRemuneration": [
+            {"MinimumRange": "103409.0", "MaximumRange": "134435.0", "RateIntervalCode": "PA", "Description": "Per Year"}
+          ],
+          "PublicationStartDate": "2026-09-01",
+          "ApplicationCloseDate": "2026-09-20",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "<p>Provide tier 2 customer support for agency-wide systems.</p>",
+              "Requirements": "US citizenship required.",
+              "WhoMayApply": {"Name": "United States Citizens", "Code": ""},
+              "RemoteIndicator": true
+            }
+          }
+        }
+      },
+      {
+        "MatchedObjectId": "830000200",
+        "MatchedObjectDescriptor": {
+          "PositionID": "VA-26-0002",
+          "PositionTitle": "IT Specialist (Applications Software)",
+          "PositionURI": "https://www.usajobs.gov/job/830000200",
+          "ApplyURI": ["https://www.usajobs.gov/job/830000200/apply"],
+          "PositionLocationDisplay": "Location Negotiable After Selection",
+          "OrganizationName": "Veterans Health Administration",
+          "DepartmentName": "Department of Veterans Affairs",
+          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
+          "QualificationSummary": "Experience with application integration.",
+          "PositionRemuneration": [
+            {"MinimumRange": "86962.0", "MaximumRange": "167000.0", "RateIntervalCode": "PA", "Description": "Per Year"}
+          ],
+          "PublicationStartDate": "2026-08-28",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "Support and integrate clinical applications.",
+              "WhoMayApply": {"Name": "Current federal employees only", "Code": ""}
+            }
+          }
+        }
+      },
+      {
+        "MatchedObjectId": "830000300",
+        "MatchedObjectDescriptor": {
+          "PositionID": "GSA-26-0003",
+          "PositionTitle": "IT Specialist (Solutions Engineer)",
+          "PositionURI": "https://www.usajobs.gov/job/830000300",
+          "PositionLocationDisplay": "Washington, District of Columbia",
+          "OrganizationName": "General Services Administration",
+          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
+          "QualificationSummary": "Cloud solutions delivery.",
+          "PositionRemuneration": [
+            {"MinimumRange": "45.50", "MaximumRange": "60.00", "RateIntervalCode": "PH", "Description": "Per Hour"}
+          ],
+          "PublicationStartDate": "2026-08-15",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "Deliver cloud solutions to agency partners.",
+              "WhoMayApply": {"Name": "United States Citizens", "Code": ""},
+              "RemoteIndicator": false
+            }
+          }
+        }
+      },
+      {
+        "MatchedObjectId": "830000400",
+        "MatchedObjectDescriptor": {
+          "PositionID": "DOI-26-0004",
+          "PositionTitle": "Supervisory IT Specialist (Customer Support)",
+          "PositionURI": "https://www.usajobs.gov/job/830000400",
+          "PositionLocation": [
+            {"LocationName": "Denver, Colorado", "CityName": "Denver", "StateCode": "CO"}
+          ],
+          "OrganizationName": "Bureau of Land Management",
+          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
+          "QualificationSummary": "Lead a customer support team.",
+          "PublicationStartDate": "2026-08-10",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "Announcement is internal to agency.",
+              "WhoMayApply": {"Name": "Internal to agency", "Code": ""},
+              "RemoteIndicator": "false"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

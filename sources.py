@@ -3,7 +3,7 @@
 Every fetcher returns a list of dicts with exactly these keys:
 
     source, company, title, location, remote, employment_type,
-    url, posted_at, description_text
+    url, posted_at, description_text, salary_min, salary_max
 
 Network failures are the caller's problem to log; the `fetch_*` helpers raise
 and `collect()` isolates each source behind its own try/except so one dead
@@ -13,10 +13,12 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import os
 import re
 import time
 
 import requests
+from urllib.parse import urlencode
 
 from textutil import first_line, html_to_text
 
@@ -32,6 +34,8 @@ BROWSER_UA = (
 FIELDS = (
     "source", "company", "title", "location", "remote",
     "employment_type", "url", "posted_at", "description_text",
+    # Only USAJOBS publishes a salary range; None everywhere else.
+    "salary_min", "salary_max",
 )
 
 
@@ -346,6 +350,207 @@ def fetch_hn() -> "list[dict]":
     return normalize_hn(_get_json(HN_ITEM_URL.format(item_id=item_id)))
 
 
+# --- USAJOBS ----------------------------------------------------------------
+#
+# Needs a free key from developer.usajobs.gov, sent as Authorization-Key, with
+# the registered email address as the User-Agent. Both come from the
+# environment (see .env.example); the key is never committed.
+#
+# NOTE: the response shape below follows USAJOBS' published Search API schema.
+# It has NOT been checked against a live response, because the endpoint returns
+# 401 to every request without a real key. Every field access is therefore
+# defensive. Re-verify the first time a key is available.
+
+USAJOBS_URL = "https://data.usajobs.gov/api/search"
+USAJOBS_CATEGORY = "2210"          # IT Specialist
+USAJOBS_PAY_GRADE_LOW = "11"
+USAJOBS_KEYWORDS = ("solutions", "customer support", "applications", "cybersecurity")
+
+# Location phrasings USAJOBS uses for a role with no fixed duty station.
+USAJOBS_REMOTE_LOCATIONS = (
+    "anywhere in the u.s.",
+    "location negotiable after selection",
+)
+
+# RateIntervalCode -> multiplier to reach an annual figure, so a per-hour and a
+# per-year posting can be sorted against each other.
+_RATE_TO_ANNUAL = {
+    "PA": 1.0,        # per annum
+    "PH": 2087.0,     # per hour, the OPM work-year
+    "PD": 260.0,      # per day
+    "PW": 52.0,       # per week
+    "BW": 26.0,       # biweekly
+    "PM": 12.0,       # per month
+}
+
+
+def usajobs_headers() -> dict:
+    """Headers for the USAJOBS API. Raises if the credentials are absent."""
+    email = os.environ.get("USAJOBS_EMAIL", "").strip()
+    key = os.environ.get("USAJOBS_KEY", "").strip()
+    missing = [n for n, v in (("USAJOBS_EMAIL", email), ("USAJOBS_KEY", key)) if not v]
+    if missing:
+        raise RuntimeError(
+            "missing " + ", ".join(missing) + " (get a free key at "
+            "https://developer.usajobs.gov and put both in .env)"
+        )
+    return {
+        "Host": "data.usajobs.gov",
+        "User-Agent": email,
+        "Authorization-Key": key,
+    }
+
+
+def _money(value):
+    """USAJOBS sends salaries as strings like "103409.0"."""
+    if value in (None, ""):
+        return None
+    try:
+        amount = float(str(value).replace(",", "").replace("$", "").strip())
+    except (TypeError, ValueError):
+        return None
+    return amount if amount > 0 else None
+
+
+def _usajobs_salary(descriptor: dict):
+    """Annualized (min, max) across every published remuneration entry."""
+    lows, highs = [], []
+    for entry in descriptor.get("PositionRemuneration") or []:
+        if not isinstance(entry, dict):
+            continue
+        factor = _RATE_TO_ANNUAL.get((entry.get("RateIntervalCode") or "").upper(), 1.0)
+        low = _money(entry.get("MinimumRange"))
+        high = _money(entry.get("MaximumRange"))
+        if low is not None:
+            lows.append(low * factor)
+        if high is not None:
+            highs.append(high * factor)
+    return (min(lows) if lows else None, max(highs) if highs else None)
+
+
+def _usajobs_remote(descriptor: dict, details: dict, location: str) -> bool:
+    """True only on an explicit RemoteIndicator or a no-duty-station location.
+
+    The indicator has appeared in two places across API revisions, so check
+    both rather than trusting one.
+    """
+    for holder in (descriptor, details):
+        flag = holder.get("RemoteIndicator")
+        if isinstance(flag, bool):
+            if flag:
+                return True
+        elif isinstance(flag, str) and flag.strip().lower() in ("true", "yes", "y"):
+            return True
+    lowered = (location or "").lower()
+    return any(phrase in lowered for phrase in USAJOBS_REMOTE_LOCATIONS)
+
+
+def _usajobs_who_may_apply(details: dict) -> str:
+    who = details.get("WhoMayApply")
+    if isinstance(who, dict):
+        return ((who.get("Name") or "") + " " + (who.get("Code") or "")).strip()
+    return str(who or "").strip()
+
+
+def normalize_usajobs(payload: dict) -> "list[dict]":
+    out = []
+    result = payload.get("SearchResult") or {}
+    for item in result.get("SearchResultItems") or []:
+        if not isinstance(item, dict):
+            continue
+        descriptor = item.get("MatchedObjectDescriptor") or {}
+        details = ((descriptor.get("UserArea") or {}).get("Details")) or {}
+
+        location = descriptor.get("PositionLocationDisplay") or ""
+        if not location:
+            names = [
+                (loc or {}).get("LocationName") or ""
+                for loc in descriptor.get("PositionLocation") or []
+                if isinstance(loc, dict)
+            ]
+            location = ", ".join(n for n in names if n)
+
+        schedule = [
+            (entry or {}).get("Name") or ""
+            for entry in descriptor.get("PositionSchedule") or []
+            if isinstance(entry, dict)
+        ]
+        offering = [
+            (entry or {}).get("Name") or ""
+            for entry in descriptor.get("PositionOfferingType") or []
+            if isinstance(entry, dict)
+        ]
+        employment_type = ", ".join(v for v in schedule + offering if v)
+
+        # WhoMayApply carries the eligibility restriction the not-open flag
+        # looks for, so it has to land in the text the filters read.
+        who = _usajobs_who_may_apply(details)
+        description = "\n\n".join(part for part in (
+            html_to_text(details.get("JobSummary")),
+            html_to_text(descriptor.get("QualificationSummary")),
+            html_to_text(details.get("Requirements")),
+            ("Who may apply: " + who) if who else "",
+        ) if part)
+
+        salary_min, salary_max = _usajobs_salary(descriptor)
+        agency = (
+            descriptor.get("OrganizationName")
+            or descriptor.get("DepartmentName")
+            or "Federal agency"
+        )
+        apply_uri = descriptor.get("ApplyURI") or []
+        url = descriptor.get("PositionURI") or (
+            apply_uri[0] if isinstance(apply_uri, list) and apply_uri else ""
+        )
+
+        out.append(_posting(
+            source="usajobs",
+            company=agency,
+            title=descriptor.get("PositionTitle"),
+            location=location,
+            remote=_usajobs_remote(descriptor, details, location),
+            employment_type=employment_type,
+            url=url,
+            posted_at=descriptor.get("PublicationStartDate")
+            or descriptor.get("PositionStartDate"),
+            description_text=description,
+            salary_min=salary_min,
+            salary_max=salary_max,
+        ))
+    return out
+
+
+def fetch_usajobs() -> "list[dict]":
+    """One search per keyword, de-duplicated on URL.
+
+    A single keyword failing is logged and skipped; only all four failing is
+    treated as the source being down.
+    """
+    headers = usajobs_headers()
+    seen, out, failures = set(), [], []
+    for keyword in USAJOBS_KEYWORDS:
+        query = {
+            "JobCategoryCode": USAJOBS_CATEGORY,
+            "Keyword": keyword,
+            "RemoteIndicator": "True",
+            "PayGradeLow": USAJOBS_PAY_GRADE_LOW,
+            "ResultsPerPage": "250",
+        }
+        url = USAJOBS_URL + "?" + urlencode(query)
+        try:
+            found = normalize_usajobs(_get_json(url, headers=headers))
+        except Exception as exc:  # noqa: BLE001 - one keyword must not kill the rest
+            log.warning("usajobs keyword %r failed: %s", keyword, exc)
+            failures.append(keyword)
+            continue
+        new = [p for p in found if p["url"] and p["url"] not in seen]
+        seen.update(p["url"] for p in new)
+        out.extend(new)
+        log.info("usajobs %r: %d postings, %d new", keyword, len(found), len(new))
+    if failures and len(failures) == len(USAJOBS_KEYWORDS):
+        raise RuntimeError("every usajobs keyword search failed")
+    return out
+
 # --- orchestration ----------------------------------------------------------
 
 ATS_FETCHERS = {
@@ -358,6 +563,7 @@ BOARD_FETCHERS = {
     "remotive": fetch_remotive,
     "remoteok": fetch_remoteok,
     "hn": fetch_hn,
+    "usajobs": fetch_usajobs,
 }
 
 

@@ -172,3 +172,92 @@ def test_a_blank_password_is_reported_as_missing(monkeypatch):
     }.items():
         monkeypatch.setenv(key, value)
     assert "SMTP_PASS" in mailer.missing_env()
+
+
+# --- USAJOBS ---------------------------------------------------------------
+#
+# The fixture is hand-built from the published schema, not captured live: the
+# endpoint 401s without a real Authorization-Key. These tests pin the
+# normalizer's behaviour, not the API's actual field names.
+
+def test_usajobs():
+    postings = sources.normalize_usajobs(load("usajobs.json"))
+    assert_shape(postings)
+    assert len(postings) == 4
+    first = postings[0]
+    assert first["source"] == "usajobs"
+    assert first["company"] == "Cybersecurity and Infrastructure Security Agency"
+    assert first["title"] == "IT Specialist (Customer Support)"
+    assert first["location"] == "Anywhere in the U.S. (remote job)"
+    assert first["url"] == "https://www.usajobs.gov/job/830000100"
+    assert first["employment_type"] == "Full-time, Permanent"
+    assert first["posted_at"].startswith("2026-09-01")
+    # JobSummary arrives as HTML and must be flattened.
+    assert "<p>" not in first["description_text"]
+    assert "tier 2 customer support" in first["description_text"].lower()
+
+
+def test_usajobs_remote_only_when_declared_or_no_duty_station():
+    by_title = {p["title"]: p for p in sources.normalize_usajobs(load("usajobs.json"))}
+    # RemoteIndicator true
+    assert by_title["IT Specialist (Customer Support)"]["remote"] is True
+    # No RemoteIndicator, but "Location Negotiable After Selection"
+    assert by_title["IT Specialist (Applications Software)"]["remote"] is True
+    # RemoteIndicator false and a real duty station
+    assert by_title["IT Specialist (Solutions Engineer)"]["remote"] is False
+    # RemoteIndicator as the string "false" must not read as truthy
+    assert by_title["Supervisory IT Specialist (Customer Support)"]["remote"] is False
+
+
+def test_usajobs_salary_is_annualized():
+    by_title = {p["title"]: p for p in sources.normalize_usajobs(load("usajobs.json"))}
+    annual = by_title["IT Specialist (Customer Support)"]
+    assert annual["salary_min"] == 103409.0
+    assert annual["salary_max"] == 134435.0
+    # Per-hour rates are multiplied by the 2087-hour OPM work year so they can
+    # be sorted against per-year postings.
+    hourly = by_title["IT Specialist (Solutions Engineer)"]
+    assert hourly["salary_max"] == 60.00 * 2087
+    assert hourly["salary_min"] == 45.50 * 2087
+    # No PositionRemuneration at all
+    none_published = by_title["Supervisory IT Specialist (Customer Support)"]
+    assert none_published["salary_max"] is None
+
+
+def test_usajobs_who_may_apply_reaches_the_description():
+    """The not-open flag reads description_text, so WhoMayApply has to land there."""
+    import filters
+    by_title = {p["title"]: p for p in sources.normalize_usajobs(load("usajobs.json"))}
+    restricted = by_title["IT Specialist (Applications Software)"]
+    assert "current federal employees only" in restricted["description_text"].lower()
+    flags = filters.compute_flags(restricted["description_text"])
+    assert "not-open:current federal employees only" in flags
+
+    internal = by_title["Supervisory IT Specialist (Customer Support)"]
+    assert "not-open:internal to agency" in filters.compute_flags(
+        internal["description_text"])
+
+    open_role = by_title["IT Specialist (Customer Support)"]
+    assert not any(f.startswith("not-open") for f in
+                   filters.compute_flags(open_role["description_text"]))
+
+
+def test_usajobs_headers_require_both_credentials(monkeypatch):
+    monkeypatch.delenv("USAJOBS_EMAIL", raising=False)
+    monkeypatch.delenv("USAJOBS_KEY", raising=False)
+    with pytest.raises(RuntimeError) as excinfo:
+        sources.usajobs_headers()
+    assert "USAJOBS_EMAIL" in str(excinfo.value)
+    assert "USAJOBS_KEY" in str(excinfo.value)
+
+    monkeypatch.setenv("USAJOBS_EMAIL", "me@example.com")
+    monkeypatch.setenv("USAJOBS_KEY", "abc123")
+    headers = sources.usajobs_headers()
+    assert headers["Host"] == "data.usajobs.gov"
+    assert headers["User-Agent"] == "me@example.com"
+    assert headers["Authorization-Key"] == "abc123"
+
+
+def test_usajobs_handles_an_empty_result():
+    assert sources.normalize_usajobs({"SearchResult": {"SearchResultItems": []}}) == []
+    assert sources.normalize_usajobs({}) == []

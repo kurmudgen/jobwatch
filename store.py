@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS postings (
     matched_keyword  TEXT,
     matched_in       TEXT,
     flags            TEXT,
+    salary_min       REAL,
+    salary_max       REAL,
     first_seen       TEXT NOT NULL,
     last_seen        TEXT NOT NULL,
     seen_count       INTEGER NOT NULL DEFAULT 1
@@ -35,10 +37,32 @@ def utcnow() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat()
 
 
+# Columns added after the table first shipped. Only ever ADD - a migration here
+# must never drop or rewrite a column, so an older database keeps every row.
+LATER_COLUMNS = (
+    ("salary_min", "REAL"),
+    ("salary_max", "REAL"),
+)
+
+
+def _migrate(conn: sqlite3.Connection) -> "list[str]":
+    """Additively bring an existing database up to the current schema."""
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(postings)")}
+    added = []
+    for name, sqltype in LATER_COLUMNS:
+        if name not in existing:
+            conn.execute("ALTER TABLE postings ADD COLUMN " + name + " " + sqltype)
+            added.append(name)
+    if added:
+        conn.commit()
+    return added
+
+
 def connect(path: "Path | None" = None) -> sqlite3.Connection:
     conn = sqlite3.connect(str(path or DB_FILE))
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
 
 
@@ -79,8 +103,9 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
         conn.execute(
             "INSERT INTO postings (url, source, company, title, location, remote, "
             "employment_type, posted_at, description_text, matched_keyword, "
-            "matched_in, flags, first_seen, last_seen, seen_count) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+            "matched_in, flags, salary_min, salary_max, "
+            "first_seen, last_seen, seen_count) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
             (
                 url,
                 posting.get("source"),
@@ -94,6 +119,8 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
                 posting.get("matched_keyword"),
                 posting.get("matched_in"),
                 json.dumps(posting.get("flags") or []),
+                posting.get("salary_min"),
+                posting.get("salary_max"),
                 now,
                 now,
             ),

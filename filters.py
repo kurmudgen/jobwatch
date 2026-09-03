@@ -46,6 +46,7 @@ EXCLUDE_TITLE_KEYWORDS = [
     "manager",
     "vp",
     "head of",
+    "supervisory",
 ]
 
 # "manager" alone is an exclusion, but this exact role is one we want.
@@ -54,6 +55,10 @@ MANAGER_EXCEPTIONS = ["technical account manager"]
 ONSITE_KEYWORDS = ["hybrid", "on-site", "onsite", "in office", "in-office"]
 
 ELIGIBILITY_PHRASES = ["not eligible", "excluding", "except"]
+
+# Federal postings that are closed to the public. USAJOBS puts this in
+# WhoMayApply, which the normalizer folds into description_text.
+NOT_OPEN_PHRASES = ["current federal employees only", "internal to agency"]
 
 # "secret" on its own is far too loose - "our globally distributed team is our
 # secret weapon" was flagging every Supabase support role as needing a security
@@ -101,6 +106,7 @@ _INCLUDE_RES = {k: _phrase_re(k) for k in INCLUDE_TITLE_KEYWORDS}
 _EXCLUDE_RES = {k: _phrase_re(k) for k in EXCLUDE_TITLE_KEYWORDS}
 _ONSITE_RES = {k: _phrase_re(k) for k in ONSITE_KEYWORDS}
 _ELIGIBILITY_RES = {k: _phrase_re(k) for k in ELIGIBILITY_PHRASES}
+_NOT_OPEN_RES = {k: _phrase_re(k) for k in NOT_OPEN_PHRASES}
 _CLEARANCE_RES = [re.compile(p) for p in CLEARANCE_PATTERNS]
 _STATE_RES = {s: _phrase_re(s) for s in US_STATES}
 _REMOTE_RE = _phrase_re("remote")
@@ -172,7 +178,7 @@ def match_onsite(location: str, description: str) -> "str | None":
     loc_norm = normalize(location)
     loc_hit = next((kw for kw in ONSITE_KEYWORDS if _ONSITE_RES[kw].search(loc_norm)), None)
     if loc_hit:
-        if _REMOTE_RE.search(loc_norm) or _has_strong_remote(description):
+        if location_says_remote(location) or _has_strong_remote(description):
             return None
         return loc_hit
 
@@ -269,16 +275,35 @@ def has_non_us_marker(location: str) -> bool:
     return any(rx.search(norm) for rx in _NON_US_RES)
 
 
+# USAJOBS never writes "remote" in the location for a role with no duty
+# station; it writes one of these instead. Both mean US-wide remote.
+REMOTE_LOCATION_PHRASES = [
+    "remote",
+    "location negotiable",
+    "anywhere in the us",
+    "anywhere in the united states",
+]
+_REMOTE_LOCATION_RES = [_phrase_re(p) for p in REMOTE_LOCATION_PHRASES]
+
+
+def location_says_remote(location: str) -> bool:
+    """Periods are stripped so "Anywhere in the U.S." reads as "anywhere in the us"."""
+    norm = normalize(location).replace(".", "")
+    return any(rx.search(norm) for rx in _REMOTE_LOCATION_RES)
+
+
 def is_us_remote(location: str) -> bool:
     """Remote, and either US-flavoured or naming no country at all."""
     location = location or ""
     norm = normalize(location)
-    if not _REMOTE_RE.search(norm):
+    if not location_says_remote(location):
         return False
 
     # Strong US tokens win outright, so a multi-region posting that includes
-    # North America survives alongside EMEA and APAC.
-    if any(rx.search(norm) for rx in _STRONG_US_RES):
+    # North America survives alongside EMEA and APAC. Periods stripped so
+    # "U.S." and "U.S.A." register.
+    nodots = norm.replace(".", "")
+    if any(rx.search(nodots) for rx in _STRONG_US_RES):
         return True
     # An explicit non-US country, city or region drops it.
     if has_non_us_marker(location):
@@ -349,6 +374,10 @@ def compute_flags(description: str) -> "list[str]":
     """Flags to eyeball by hand: state eligibility (Montana) and clearance."""
     norm = normalize(description)
     flags = []
+
+    not_open = [p for p in NOT_OPEN_PHRASES if _NOT_OPEN_RES[p].search(norm)]
+    if not_open:
+        flags.append("not-open:" + ",".join(not_open))
 
     phrase_hits = [p for p in ELIGIBILITY_PHRASES if _ELIGIBILITY_RES[p].search(norm)]
     states = find_states(description)
@@ -421,6 +450,36 @@ def compute_tier(title: str) -> int:
     return 3
 
 
+# --- federal (USAJOBS) include gate ----------------------------------------
+#
+# Federal 2210 titles are "IT Specialist (CUSTSPT)", "IT Specialist (APPSW)",
+# "IT Cybersecurity Specialist (INFOSEC)" and so on. None of them contain
+# "engineer", so INCLUDE_TITLE_KEYWORDS - which is built around private-sector
+# engineer titles - matches almost none of them and would silently discard the
+# entire source. For USAJOBS the API query is the include gate instead:
+# JobCategoryCode=2210, one of four keywords, RemoteIndicator=True and
+# PayGradeLow=11 together are already a tighter filter than a title regex.
+# Exclusions, the on-site rule and every flag still apply.
+
+FEDERAL_SOURCE = "usajobs"
+
+USAJOBS_QUERY_KEYWORDS = ["solutions", "customer support", "applications", "cybersecurity"]
+USAJOBS_FALLBACK_KEYWORD = "it specialist (2210)"
+
+_USAJOBS_KEYWORD_RES = {k: _phrase_re(k) for k in USAJOBS_QUERY_KEYWORDS}
+# Longest first so "customer support" wins over a bare "support".
+_USAJOBS_KEYWORD_ORDER = sorted(USAJOBS_QUERY_KEYWORDS, key=len, reverse=True)
+
+
+def usajobs_keyword(title: str) -> str:
+    """Which of the four searched keywords the title shows, else the category."""
+    norm = normalize(title)
+    for keyword in _USAJOBS_KEYWORD_ORDER:
+        if _USAJOBS_KEYWORD_RES[keyword].search(norm):
+            return keyword
+    return USAJOBS_FALLBACK_KEYWORD
+
+
 def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     """Apply all rules to a normalized posting.
 
@@ -433,11 +492,18 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     location = posting.get("location") or ""
     employment_type = posting.get("employment_type") or ""
 
+    is_federal = posting.get("source") == FEDERAL_SOURCE
+
     keyword = match_include(title)
     matched_in = "title" if keyword else None
     if not keyword and match_description:
         keyword = match_include(description)
         matched_in = "description" if keyword else None
+    if not keyword and is_federal:
+        # The USAJOBS query already restricted this to remote 2210 roles at
+        # GS-11 and above matching one of the four keywords.
+        keyword = usajobs_keyword(title)
+        matched_in = "usajobs query"
     if not keyword:
         posting["reject_reason"] = "no include keyword"
         return None

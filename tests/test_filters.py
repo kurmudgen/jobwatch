@@ -472,3 +472,183 @@ def test_html_digest_handles_no_matches():
     html = digest.render_html([], empty_note="Nothing new.")
     assert "Nothing new." in html
     assert "<ul" not in html
+
+
+# --- federal digest section ------------------------------------------------
+
+def federal(**kwargs):
+    base = {
+        "source": "usajobs", "company": "CISA", "title": "IT Specialist (Customer Support)",
+        "location": "Anywhere in the U.S. (remote job)", "remote": True,
+        "employment_type": "Full-time", "url": "https://www.usajobs.gov/job/1",
+        "posted_at": "2026-09-01T00:00:00+00:00", "description_text": "",
+        "flags": [], "salary_min": 100000.0, "salary_max": 130000.0,
+    }
+    base.update(kwargs)
+    return base
+
+
+def test_federal_postings_get_their_own_section_sorted_by_salary_max():
+    import digest
+    rows = [
+        federal(url="https://u/1", title="Low", salary_max=110000.0),
+        federal(url="https://u/2", title="High", salary_max=180000.0),
+        federal(url="https://u/3", title="Mid", salary_max=140000.0),
+    ]
+    md = digest.render(rows, by_tier=True)
+    assert "## Federal (USAJOBS) (3)" in md
+    assert md.index("High") < md.index("Mid") < md.index("Low")
+
+
+def test_federal_postings_without_a_salary_sort_last():
+    import digest
+    rows = [
+        federal(url="https://u/1", title="NoSalary", salary_min=None, salary_max=None),
+        federal(url="https://u/2", title="HasSalary", salary_max=120000.0),
+    ]
+    md = digest.render(rows, by_tier=True)
+    assert md.index("HasSalary") < md.index("NoSalary")
+    assert "salary not published" in md
+
+
+def test_federal_postings_are_excluded_from_the_tier_sections():
+    import digest
+    rows = [
+        posting(title="Support Engineer", url="https://x/1"),
+        federal(url="https://u/1"),
+    ]
+    md = digest.render(rows, by_tier=True)
+    # The federal role is a support-engineer title but must not appear in Tier 1.
+    tier_block = md[md.index("## Tier 1"):md.index("## Federal")]
+    assert "CISA" not in tier_block
+    assert "2 matches" in md
+    assert "Federal: 1" in md
+
+
+def test_federal_section_shows_the_not_open_flag():
+    import digest
+    rows = [federal(flags=["not-open:current federal employees only"])]
+    md = digest.render(rows)
+    assert "not-open:current federal employees only" in md
+    html = digest.render_html(rows)
+    assert "not-open:current federal employees only" in html
+
+
+def test_federal_only_digest_still_gets_a_summary():
+    import digest
+    md = digest.render([federal()], by_tier=True)
+    assert "1 match across 1 companies" in md
+    assert "Federal: 1" in md
+    html = digest.render_html([federal()])
+    assert "Federal: 1" in html
+
+
+def test_salary_text_formats_ranges():
+    import digest
+    assert digest._salary_text(federal(salary_min=100000.0, salary_max=130000.0)) \
+        == "$100,000 - $130,000"
+    assert digest._salary_text(federal(salary_min=None, salary_max=130000.0)) \
+        == "up to $130,000"
+    assert digest._salary_text(federal(salary_min=100000.0, salary_max=None)) \
+        == "from $100,000"
+    assert digest._salary_text(federal(salary_min=None, salary_max=None)) \
+        == "salary not published"
+
+
+# --- federal include gate --------------------------------------------------
+
+@pytest.mark.parametrize("title,expected", [
+    ("IT Specialist (Customer Support)", "customer support"),
+    ("IT Specialist (Applications Software)", "applications"),
+    ("IT Cybersecurity Specialist (INFOSEC)", "cybersecurity"),
+    ("IT Specialist (Solutions Analysis)", "solutions"),
+    ("IT Specialist (CUSTSPT)", "it specialist (2210)"),
+    ("IT Specialist (SYSANALYSIS)", "it specialist (2210)"),
+])
+def test_usajobs_keyword_labels(title, expected):
+    assert filters.usajobs_keyword(title) == expected
+
+
+def test_federal_titles_pass_on_the_api_query_not_the_engineer_list():
+    """Federal 2210 titles contain no "engineer", so the private-sector include
+    list matches almost none of them. Without this gate the whole source would
+    be silently discarded."""
+    job = federal(title="IT Specialist (CUSTSPT)", description_text="Help desk work.")
+    assert filters.match_include(job["title"]) is None
+    result = filters.evaluate(job)
+    assert result is not None
+    assert result["matched_in"] == "usajobs query"
+    assert result["matched_keyword"] == "it specialist (2210)"
+
+
+def test_the_federal_gate_does_not_leak_to_other_sources():
+    job = posting(source="greenhouse", title="IT Specialist (CUSTSPT)")
+    assert filters.evaluate(job) is None
+
+
+def test_a_title_match_still_wins_over_the_federal_gate():
+    job = federal(title="IT Specialist (Solutions Engineer)")
+    result = filters.evaluate(job)
+    assert result["matched_keyword"] == "solutions engineer"
+    assert result["matched_in"] == "title"
+
+
+@pytest.mark.parametrize("title", [
+    "Supervisory IT Specialist (Customer Support)",
+    "Supervisory Solutions Engineer",
+])
+def test_supervisory_is_excluded_as_the_federal_spelling_of_manager(title):
+    assert filters.match_exclude(title) == "supervisory"
+    assert filters.evaluate(federal(title=title)) is None
+
+
+def test_federal_exclusions_and_flags_still_apply():
+    """The gate replaces the include check only."""
+    assert filters.evaluate(federal(title="IT Specialist (Customer Support) Intern")) is None
+    kept = filters.evaluate(federal(
+        title="IT Specialist (CUSTSPT)",
+        description_text="Open to current federal employees only. Requires a Secret clearance.",
+    ))
+    assert kept is not None
+    assert "not-open:current federal employees only" in kept["flags"]
+    assert any(f.startswith("clearance:") for f in kept["flags"])
+
+
+def test_salary_survives_the_database_round_trip(tmp_path):
+    """The Federal section sorts on salary_max, and `list` reads from SQLite -
+    so the column has to exist or the sort silently degrades to alphabetical."""
+    import store
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [federal(url="https://u/1", salary_min=1.0, salary_max=2.0)])
+        rows = store.recent(conn, days=1)
+        assert rows[0]["salary_min"] == 1.0
+        assert rows[0]["salary_max"] == 2.0
+    finally:
+        conn.close()
+
+
+def test_migration_is_additive_and_idempotent(tmp_path):
+    """An existing database must keep every row when the columns are added."""
+    import sqlite3, store
+    path = tmp_path / "old.db"
+    raw = sqlite3.connect(str(path))
+    raw.executescript(
+        store.SCHEMA.replace("    salary_min       REAL,\n", "")
+                    .replace("    salary_max       REAL,\n", "")
+    )
+    raw.execute(
+        "INSERT INTO postings (url, source, company, title, first_seen, last_seen) "
+        "VALUES ('https://u/1','ashby','Acme','Support Engineer','x','x')"
+    )
+    raw.commit()
+    raw.close()
+
+    conn = store.connect(path)
+    try:
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(postings)")}
+        assert {"salary_min", "salary_max"} <= cols
+        assert conn.execute("SELECT COUNT(*) FROM postings").fetchone()[0] == 1
+        assert store._migrate(conn) == []
+    finally:
+        conn.close()
