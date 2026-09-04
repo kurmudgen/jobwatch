@@ -711,3 +711,78 @@ def test_partner_only_digest_still_summarises():
     import digest
     md = digest.render([partner()], by_tier=True)
     assert "1 match across 1 companies" in md
+
+
+# --- closing dates ---------------------------------------------------------
+#
+# USAJOBS keeps returning closed announcements from its search endpoint: a
+# Treasury IT Specialist (AI) posting from February still came back in
+# September with its page reading "announcement has closed".
+
+TODAY = __import__("datetime").date(2026, 9, 3)
+
+
+@pytest.mark.parametrize("closes_at,expected", [
+    ("", True),                              # no deadline published
+    (None, True),
+    ("2026-09-03T00:00:00+00:00", True),     # closes today, still open
+    ("2026-09-04T00:00:00+00:00", True),
+    ("2026-09-02T00:00:00+00:00", False),    # closed yesterday
+    ("2026-02-24T00:00:00+00:00", False),
+    ("not a date", True),                    # unparseable is not evidence
+])
+def test_is_open(closes_at, expected):
+    assert filters.is_open({"closes_at": closes_at}, today=TODAY) is expected
+
+
+def test_filter_open_drops_only_the_expired():
+    batch = [
+        posting(url="https://x/1", closes_at="2026-09-30T00:00:00+00:00"),
+        posting(url="https://x/2", closes_at="2026-02-24T00:00:00+00:00"),
+        posting(url="https://x/3"),  # no closes_at at all
+    ]
+    kept = filters.filter_open(batch, today=TODAY)
+    assert [p["url"] for p in kept] == ["https://x/1", "https://x/3"]
+
+
+def test_sources_without_a_deadline_are_unaffected():
+    """Only USAJOBS publishes a close date; everything else must pass through."""
+    batch = [posting(source=s, url="https://x/" + s)
+             for s in ("greenhouse", "lever", "ashby", "workday", "hn")]
+    assert len(filters.filter_open(batch, today=TODAY)) == len(batch)
+
+
+def test_closes_at_survives_the_database_round_trip(tmp_path):
+    import store
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [federal(url="https://u/1",
+                                         closes_at="2026-09-30T00:00:00+00:00")])
+        rows = store.recent(conn, days=1)
+        assert rows[0]["closes_at"].startswith("2026-09-30")
+    finally:
+        conn.close()
+
+
+def test_a_reposted_job_gets_its_new_deadline(tmp_path):
+    """closes_at is refreshed on a posting we already had, so an extended
+    announcement does not stay filtered out."""
+    import store
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [federal(url="https://u/1",
+                                         closes_at="2026-09-02T00:00:00+00:00")])
+        store.upsert_many(conn, [federal(url="https://u/1",
+                                         closes_at="2026-12-31T00:00:00+00:00")])
+        rows = store.recent(conn, days=1)
+        assert len(rows) == 1
+        assert rows[0]["closes_at"].startswith("2026-12-31")
+    finally:
+        conn.close()
+
+
+def test_the_digest_shows_the_deadline():
+    import digest
+    rows = [federal(closes_at="2026-09-30T00:00:00+00:00")]
+    assert "closes 2026-09-30" in digest.render(rows)
+    assert "closes 2026-09-30" in digest.render_html(rows)

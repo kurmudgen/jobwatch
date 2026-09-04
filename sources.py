@@ -3,7 +3,7 @@
 Every fetcher returns a list of dicts with exactly these keys:
 
     source, company, title, location, remote, employment_type,
-    url, posted_at, description_text, salary_min, salary_max
+    url, posted_at, description_text, salary_min, salary_max, closes_at
 
 Network failures are the caller's problem to log; the `fetch_*` helpers raise
 and `collect()` isolates each source behind its own try/except so one dead
@@ -36,6 +36,9 @@ FIELDS = (
     "employment_type", "url", "posted_at", "description_text",
     # Only USAJOBS publishes a salary range; None everywhere else.
     "salary_min", "salary_max",
+    # Application deadline. Only USAJOBS publishes one; None means "no known
+    # deadline", which is treated as open.
+    "closes_at",
 )
 
 
@@ -96,6 +99,7 @@ def _posting(**kwargs) -> dict:
     row["employment_type"] = (row["employment_type"] or "").strip()
     row["url"] = (row["url"] or "").strip()
     row["posted_at"] = _iso(row["posted_at"])
+    row["closes_at"] = _iso(row["closes_at"])
     row["description_text"] = row["description_text"] or ""
     return row
 
@@ -376,11 +380,14 @@ USAJOBS_CATEGORY = "2210"          # IT Specialist
 USAJOBS_PAY_GRADE_LOW = "11"
 USAJOBS_KEYWORDS = ("solutions", "customer support", "applications", "cybersecurity")
 
-# Location phrasings USAJOBS uses for a role with no fixed duty station.
-USAJOBS_REMOTE_LOCATIONS = (
-    "anywhere in the u.s.",
-    "location negotiable after selection",
-)
+# "Anywhere in the U.S. (remote job)" states remote on its face. "Location
+# Negotiable After Selection" does NOT: in federal HR it means the duty station
+# is chosen from the listed offices after selection, so it is only remote when
+# RemoteIndicator agrees. Measured on the four GS-11+ 2210 roles that reached
+# the digest: every one was RemoteIndicator=False with TeleworkEligible=True,
+# i.e. telework from a duty station, not remote.
+USAJOBS_SELF_EVIDENT_REMOTE = ("anywhere in the u.s.",)
+USAJOBS_NEGOTIABLE_LOCATION = "location negotiable"
 
 # RateIntervalCode -> multiplier to reach an annual figure, so a per-hour and a
 # per-year posting can be sorted against each other.
@@ -438,21 +445,50 @@ def _usajobs_salary(descriptor: dict):
     return (min(lows) if lows else None, max(highs) if highs else None)
 
 
-def _usajobs_remote(descriptor: dict, details: dict, location: str) -> bool:
-    """True only on an explicit RemoteIndicator or a no-duty-station location.
-
-    The indicator has appeared in two places across API revisions, so check
-    both rather than trusting one.
-    """
-    for holder in (descriptor, details):
-        flag = holder.get("RemoteIndicator")
-        if isinstance(flag, bool):
-            if flag:
-                return True
-        elif isinstance(flag, str) and flag.strip().lower() in ("true", "yes", "y"):
+def _usajobs_flag(holder: dict, name: str):
+    """Read a Workday-style boolean that may arrive as a bool or a string."""
+    value = holder.get(name)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in ("true", "yes", "y"):
             return True
+        if lowered in ("false", "no", "n"):
+            return False
+    return None
+
+
+def usajobs_remote_indicator(descriptor: dict, details: dict):
+    """RemoteIndicator on the job itself. It lives in UserArea.Details on the
+    live API, but has appeared on the descriptor across revisions."""
+    for holder in (details, descriptor):
+        flag = _usajobs_flag(holder, "RemoteIndicator")
+        if flag is not None:
+            return flag
+    return None
+
+
+def usajobs_telework_eligible(details: dict):
+    """Telework is not remote - it means a duty station plus some days at home."""
+    return _usajobs_flag(details, "TeleworkEligible")
+
+
+def _usajobs_remote(descriptor: dict, details: dict, location: str) -> bool:
+    """Remote only when the job says so.
+
+    A location of "Anywhere in the U.S. (remote job)" is self-evident. A
+    "Location Negotiable" posting counts only when RemoteIndicator is true;
+    on its own it means the duty station is picked later, not that the role is
+    remote.
+    """
+    indicator = usajobs_remote_indicator(descriptor, details)
+    if indicator is True:
+        return True
     lowered = (location or "").lower()
-    return any(phrase in lowered for phrase in USAJOBS_REMOTE_LOCATIONS)
+    if any(phrase in lowered for phrase in USAJOBS_SELF_EVIDENT_REMOTE):
+        return True
+    return False
 
 
 def _usajobs_who_may_apply(details: dict) -> str:
@@ -529,6 +565,20 @@ def normalize_usajobs(payload: dict) -> "list[dict]":
         ]
         employment_type = ", ".join(v for v in schedule + offering if v)
 
+        indicator = usajobs_remote_indicator(descriptor, details)
+        telework = usajobs_telework_eligible(details)
+        remote = _usajobs_remote(descriptor, details, location)
+        if remote and "remote" not in location.lower():
+            # So is_us_remote, which reads the location only, agrees with the
+            # job's own RemoteIndicator.
+            location = (location + " (remote)").strip()
+
+        work_mode = []
+        if indicator is not None:
+            work_mode.append("RemoteIndicator: " + ("yes" if indicator else "no") + ".")
+        if telework is not None:
+            work_mode.append("Telework eligible: " + ("yes" if telework else "no") + ".")
+
         # WhoMayApply carries the eligibility restriction the not-open flag
         # looks for, so it has to land in the text the filters read.
         description = "\n\n".join(part for part in (
@@ -537,8 +587,8 @@ def normalize_usajobs(payload: dict) -> "list[dict]":
             html_to_text(details.get("Requirements")),
             _usajobs_clearance(details),
             _usajobs_eligibility(details),
+            " ".join(work_mode),
         ) if part)
-
         salary_min, salary_max = _usajobs_salary(descriptor)
         agency = (
             descriptor.get("OrganizationName")
@@ -557,7 +607,7 @@ def normalize_usajobs(payload: dict) -> "list[dict]":
             company=agency,
             title=descriptor.get("PositionTitle"),
             location=location,
-            remote=_usajobs_remote(descriptor, details, location),
+            remote=remote,
             employment_type=employment_type,
             url=url,
             posted_at=descriptor.get("PublicationStartDate")
@@ -565,6 +615,8 @@ def normalize_usajobs(payload: dict) -> "list[dict]":
             description_text=description,
             salary_min=salary_min,
             salary_max=salary_max,
+            closes_at=descriptor.get("ApplicationCloseDate")
+            or descriptor.get("PositionEndDate"),
         ))
     return out
 

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS postings (
     flags            TEXT,
     salary_min       REAL,
     salary_max       REAL,
+    closes_at        TEXT,
     first_seen       TEXT NOT NULL,
     last_seen        TEXT NOT NULL,
     seen_count       INTEGER NOT NULL DEFAULT 1
@@ -42,6 +43,7 @@ def utcnow() -> str:
 LATER_COLUMNS = (
     ("salary_min", "REAL"),
     ("salary_max", "REAL"),
+    ("closes_at", "TEXT"),
 )
 
 
@@ -88,13 +90,15 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
         if existing:
             conn.execute(
                 "UPDATE postings SET last_seen = ?, seen_count = seen_count + 1, "
-                "title = ?, location = ?, employment_type = ?, flags = ? WHERE url = ?",
+                "title = ?, location = ?, employment_type = ?, flags = ?, "
+                "closes_at = ? WHERE url = ?",
                 (
                     now,
                     posting.get("title"),
                     posting.get("location"),
                     posting.get("employment_type"),
                     json.dumps(posting.get("flags") or []),
+                    posting.get("closes_at"),
                     url,
                 ),
             )
@@ -103,9 +107,9 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
         conn.execute(
             "INSERT INTO postings (url, source, company, title, location, remote, "
             "employment_type, posted_at, description_text, matched_keyword, "
-            "matched_in, flags, salary_min, salary_max, "
+            "matched_in, flags, salary_min, salary_max, closes_at, "
             "first_seen, last_seen, seen_count) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
             (
                 url,
                 posting.get("source"),
@@ -121,6 +125,7 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
                 json.dumps(posting.get("flags") or []),
                 posting.get("salary_min"),
                 posting.get("salary_max"),
+                posting.get("closes_at"),
                 now,
                 now,
             ),

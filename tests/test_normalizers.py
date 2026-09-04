@@ -204,13 +204,57 @@ def test_usajobs_strips_the_port_from_position_uri():
     assert all(":443" not in p["url"] for p in sources.normalize_usajobs(load("usajobs.json")))
 
 
-def test_usajobs_remote_only_on_indicator_or_no_duty_station():
+def test_location_negotiable_is_not_remote_without_the_indicator():
+    """In federal HR "Location Negotiable After Selection" means the duty
+    station is chosen after selection, not that the role is remote. Every one
+    of these measured live was RemoteIndicator=False, TeleworkEligible=True."""
     rows = usajobs_rows()
-    assert rows["remote/negotiable"]["location"] == "Location Negotiable After Selection"
-    assert rows["remote/negotiable"]["remote"] is True
-    # A named duty station is not remote, whatever else the posting says.
+    negotiable = rows["remote/negotiable"]
+    assert "Negotiable" in negotiable["location"]
+    assert negotiable["remote"] is False
     assert rows["not-open"]["remote"] is False
     assert rows["hourly-or-plain"]["remote"] is False
+
+
+def test_location_negotiable_is_remote_when_the_indicator_agrees():
+    payload = load("usajobs.json")
+    item = payload["SearchResult"]["SearchResultItems"][0]
+    item["MatchedObjectDescriptor"]["UserArea"]["Details"]["RemoteIndicator"] = True
+    row = sources.normalize_usajobs(payload)[0]
+    assert row["remote"] is True
+    # The location is annotated so the location-only us-remote filter agrees.
+    assert "(remote)" in row["location"]
+    import filters
+    assert filters.is_us_remote(row["location"]) is True
+
+
+def test_anywhere_in_the_us_is_remote_on_its_face():
+    payload = load("usajobs.json")
+    d = payload["SearchResult"]["SearchResultItems"][0]["MatchedObjectDescriptor"]
+    d["PositionLocationDisplay"] = "Anywhere in the U.S. (remote job)"
+    d["UserArea"]["Details"]["RemoteIndicator"] = False
+    assert sources.normalize_usajobs(payload)[0]["remote"] is True
+
+
+def test_telework_eligible_is_not_treated_as_remote():
+    payload = load("usajobs.json")
+    det = payload["SearchResult"]["SearchResultItems"][0]["MatchedObjectDescriptor"]["UserArea"]["Details"]
+    det["RemoteIndicator"] = False
+    det["TeleworkEligible"] = True
+    row = sources.normalize_usajobs(payload)[0]
+    assert row["remote"] is False
+    # But it is recorded, because it is worth knowing.
+    assert "Telework eligible: yes" in row["description_text"]
+    assert "RemoteIndicator: no" in row["description_text"]
+
+
+@pytest.mark.parametrize("raw,expected", [
+    (True, True), (False, False), ("true", True), ("True", True),
+    ("false", False), ("no", False), (None, None), ("maybe", None),
+])
+def test_usajobs_boolean_parsing(raw, expected):
+    assert sources._usajobs_flag({"X": raw}, "X") is expected
+    assert sources._usajobs_flag({}, "X") is None
 
 
 def test_usajobs_salary_is_parsed_and_annualized():

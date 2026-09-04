@@ -35,6 +35,7 @@ Useful flags on `run`:
 | `--match-description` | also match include keywords in the description, not just the title |
 | `--tier` | group the digest by tier instead of by company, so it reads in apply order |
 | `--no-us-remote` | disable the US-remote filter, which is **on by default** |
+| `--include-closed` | keep postings past their application deadline (dropped by default) |
 | `--include-unverified` | poll companies marked `unverified` (skipped by default) |
 | `-v` | mirror the log to stderr as well as `jobwatch.log` |
 
@@ -162,8 +163,22 @@ exist: 4 remote GS-11+ IT roles, including an **IT Specialist (AI) at
 $197,200**, all tagged "Location Negotiable After Selection". Flip
 `sources.USAJOBS_SEND_REMOTE_INDICATOR` to restore the server-side filter.
 
-`remote` is set True **only** on an explicit `RemoteIndicator`, or when the
-location says "Anywhere in the U.S." or "Location Negotiable After Selection".
+`remote` is set True **only** when the job's own `RemoteIndicator` is true, or
+when the location says "Anywhere in the U.S." (which states it on its face).
+
+**"Location Negotiable After Selection" is not remote on its own.** In federal
+HR it means the duty station is chosen from the listed offices *after*
+selection. Measured live: every "Location Negotiable" 2210 posting was
+`RemoteIndicator=False, TeleworkEligible=True` — telework from a duty station,
+not remote. `TeleworkEligible` is read and recorded in the description, but
+never treated as remote. When `RemoteIndicator` does agree, the normalizer
+appends "(remote)" to the location so the location-only US-remote filter agrees
+with the job's own answer.
+
+The practical effect: the Federal section is currently **empty**, because no
+GS-11+ 2210 role is genuinely remote right now. That matches the other
+measurement — `RemoteIndicator=True` returns 41 jobs government-wide and none
+are 2210.
 Confirmed against live data: the indicator sits in `UserArea.Details`, not on
 the descriptor. Both are still checked, and the string `"false"` is not treated
 as truthy.
@@ -312,6 +327,15 @@ read as "Lead".
 applying in; without it the digest groups by company and sorts each company's
 roles by tier. Tier is derived from the title at render time rather than stored,
 so rows written before tiering existed sort correctly with no migration.
+
+## Closing dates
+
+USAJOBS keeps returning announcements from its search endpoint after they close,
+so `ApplicationCloseDate` is captured as `closes_at` and anything already past
+its deadline is dropped. `--include-closed` keeps them. A posting with no
+published deadline is treated as open, which is every source except USAJOBS. The
+deadline is refreshed on postings already stored, so an extended announcement
+comes back rather than staying filtered out.
 
 ## Storage
 

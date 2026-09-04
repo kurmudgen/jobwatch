@@ -6,6 +6,7 @@ unicode-dash collapsed) so that "Senior  Support-Engineer" and
 """
 from __future__ import annotations
 
+import datetime as dt
 import re
 from typing import Iterable
 
@@ -285,10 +286,13 @@ def has_non_us_marker(location: str) -> bool:
 # station; it writes one of these instead. Both mean US-wide remote.
 REMOTE_LOCATION_PHRASES = [
     "remote",
-    "location negotiable",
     "anywhere in the us",
     "anywhere in the united states",
 ]
+# "Location Negotiable After Selection" is deliberately absent: in federal HR it
+# means the duty station is chosen after selection, not that the role is remote.
+# The USAJOBS normalizer appends "(remote)" when RemoteIndicator agrees, which
+# is what makes such a posting pass this filter.
 _REMOTE_LOCATION_RES = [_phrase_re(p) for p in REMOTE_LOCATION_PHRASES]
 
 
@@ -321,6 +325,30 @@ def is_us_remote(location: str) -> bool:
         return True
     # Remote with no country named at all ("Remote", "Remote, Global").
     return True
+
+
+# --- closing dates ----------------------------------------------------------
+#
+# USAJOBS keeps returning announcements from its search endpoint after they
+# close - a Treasury IT Specialist (AI) posting from February still came back in
+# September, and its page reads "announcement has closed". A posting with no
+# published deadline is treated as open, which is every source except USAJOBS.
+
+def is_open(posting: dict, today=None) -> bool:
+    """False only when the posting has a deadline that has already passed."""
+    raw = (posting.get("closes_at") or "").strip()
+    if not raw:
+        return True
+    today = today or dt.date.today()
+    try:
+        closes = dt.datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+    except (ValueError, TypeError):
+        return True  # unparseable date is not evidence that it closed
+    return closes >= today
+
+
+def filter_open(postings: "Iterable[dict]", today=None) -> "list[dict]":
+    return [p for p in postings if is_open(p, today=today)]
 
 
 def filter_us_remote(postings: "Iterable[dict]") -> "list[dict]":

@@ -219,6 +219,9 @@ def render(
             posted = _short_date(posting.get("posted_at") or "")
             if posted:
                 bits.append("posted " + posted)
+            closes = _short_date(posting.get("closes_at") or "")
+            if closes:
+                bits.append("closes " + closes)
             lines.append("  - " + " | ".join(bits))
             flag_text = _flag_line(posting)
             if flag_text:
@@ -366,6 +369,9 @@ def render_html(
             posted = _short_date(posting.get("posted_at") or "")
             if posted:
                 bits.append("posted " + posted)
+            closes = _short_date(posting.get("closes_at") or "")
+            if closes:
+                bits.append("<strong>closes " + closes + "</strong>")
             out.append("<span style='color:#666'>" + " &middot; ".join(bits) + "</span>")
             flags = posting.get("flags") or []
             if flags:

@@ -45,9 +45,13 @@ def cmd_run(args) -> int:
     log.info("%d postings matched the filters", len(matches))
 
     n_matched = len(matches)
+    if not args.include_closed:
+        matches = filters.filter_open(matches)
+        log.info("closing-date filter: %d -> %d", n_matched, len(matches))
+    n_open = len(matches)
     if args.us_remote:
         matches = filters.filter_us_remote(matches)
-        log.info("us-remote filter: %d -> %d", n_matched, len(matches))
+        log.info("us-remote filter: %d -> %d", n_open, len(matches))
     n_us_remote = len(matches)
     matches = filters.dedupe(matches)
     log.info("dedupe: %d -> %d", n_us_remote, len(matches))
@@ -68,6 +72,7 @@ def cmd_run(args) -> int:
         empty_note=(
             "No new matches. Scanned " + str(len(postings)) + " postings; "
             + str(n_matched) + " matched the keyword filters, "
+            + str(n_open) + " still open, "
             + str(n_us_remote) + " survived the US-remote filter, "
             + str(len(matches)) + " after dedupe"
             + (" - all seen before." if matches else ".")
@@ -99,6 +104,8 @@ def cmd_list(args) -> int:
         rows = store.recent(conn, days=args.days)
     finally:
         conn.close()
+    if not args.include_closed:
+        rows = filters.filter_open(rows)
     if args.us_remote:
         rows = filters.filter_us_remote(rows)
     rows = filters.dedupe(rows)
@@ -215,6 +222,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit the digest as HTML (used when sending via the Gmail connector)",
     )
     run.add_argument(
+        "--include-closed",
+        action="store_true",
+        help="keep postings whose application deadline has passed (default: drop)",
+    )
+    run.add_argument(
         "--include-unverified",
         action="store_true",
         help="poll companies marked unverified in companies.yaml",
@@ -231,6 +243,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     listing.add_argument(
         "--html", action="store_true", help="emit the digest as HTML"
+    )
+    listing.add_argument(
+        "--include-closed",
+        action="store_true",
+        help="keep postings whose application deadline has passed (default: drop)",
     )
     listing.add_argument(
         "--us-remote",
