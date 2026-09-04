@@ -551,12 +551,182 @@ def fetch_usajobs() -> "list[dict]":
         raise RuntimeError("every usajobs keyword search failed")
     return out
 
+# --- Workday ----------------------------------------------------------------
+#
+# Workday exposes an unauthenticated JSON search per tenant. The slug in
+# companies.yaml is the composite "tenant/wdNN/site", e.g. "bah/wd1/BAH_Jobs",
+# because all three parts vary per company and are discovered by reading the
+# company's public careers redirect.
+#
+#   POST https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs
+#   {"appliedFacets":{},"limit":20,"offset":0,"searchText":"..."}
+#
+# Verified against the live API: limit is capped at 20 (50 and 100 both return
+# zero rows), offset pages correctly, and searchText is a loose stemmed OR
+# match rather than a phrase filter - "Claude" returns 977 hits led by "Cloud
+# Engineer". The searches only widen the net; the real filtering is the normal
+# title rules applied afterwards.
+
+WORKDAY_LIST_URL = "https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs"
+WORKDAY_DETAIL_URL = "https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}{path}"
+WORKDAY_PUBLIC_URL = "https://{tenant}.{wd}.myworkdayjobs.com/{site}{path}"
+
+WORKDAY_QUERIES = ("Anthropic", "forward deployed", "Claude", "solutions engineer")
+WORKDAY_PAGE_SIZE = 20      # the API's hard cap
+WORKDAY_MAX_PAGES = 3       # 60 rows per query; deeper is fuzzy-match noise
+WORKDAY_JSON_HEADERS = {
+    "User-Agent": BROWSER_UA,
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+}
+
+_POSTED_DAYS = re.compile(r"posted\s+(\d+)\+?\s*day", re.I)
+_POSTED_TODAY = re.compile(r"posted\s+today", re.I)
+
+
+def parse_workday_slug(slug: str):
+    """"bah/wd1/BAH_Jobs" -> ("bah", "wd1", "BAH_Jobs")."""
+    parts = [p for p in (slug or "").split("/") if p]
+    if len(parts) != 3:
+        raise ValueError(
+            "workday slug must be 'tenant/wdNN/site', got " + repr(slug)
+        )
+    return parts[0], parts[1], parts[2]
+
+
+def _workday_posted(text: str) -> str:
+    """"Posted 7 Days Ago" -> an approximate ISO date.
+
+    Only used when the detail call did not run; the detail payload carries a
+    real startDate, which is preferred. "30+ Days Ago" floors at 30, so treat
+    anything at that boundary as approximate.
+    """
+    if not text:
+        return ""
+    if _POSTED_TODAY.search(text):
+        return dt.datetime.now(dt.timezone.utc).date().isoformat()
+    match = _POSTED_DAYS.search(text)
+    if not match:
+        return ""
+    days = int(match.group(1))
+    return (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=days)).isoformat()
+
+
+def normalize_workday(payload: dict, company: str, tenant: str, wd: str, site: str):
+    """List-level rows. Descriptions need a second request per posting, so the
+    caller enriches only the ones that survive the title filter."""
+    out = []
+    for job in payload.get("jobPostings") or []:
+        if not isinstance(job, dict):
+            continue
+        path = job.get("externalPath") or ""
+        if not path:
+            continue
+        out.append(_posting(
+            source="workday",
+            company=company,
+            title=job.get("title"),
+            location=job.get("locationsText") or "",
+            remote=None,
+            employment_type="",
+            url=WORKDAY_PUBLIC_URL.format(tenant=tenant, wd=wd, site=site, path=path),
+            posted_at=_workday_posted(job.get("postedOn") or ""),
+            description_text="",
+        ))
+    return out
+
+
+def fetch_workday_detail(path: str, tenant: str, wd: str, site: str) -> dict:
+    """Description, real location, schedule and start date for one posting."""
+    url = WORKDAY_DETAIL_URL.format(tenant=tenant, wd=wd, site=site, path=path)
+    payload = _get_json(url, headers=WORKDAY_JSON_HEADERS)
+    info = payload.get("jobPostingInfo") or {}
+    return {
+        "description_text": html_to_text(info.get("jobDescription")),
+        "location": info.get("location") or "",
+        "employment_type": info.get("timeType") or "",
+        "posted_at": info.get("startDate") or "",
+        "url": info.get("externalUrl") or "",
+    }
+
+
+def _workday_search(tenant, wd, site, company, query):
+    """All pages for one searchText, up to WORKDAY_MAX_PAGES."""
+    url = WORKDAY_LIST_URL.format(tenant=tenant, wd=wd, site=site)
+    rows = []
+    for page in range(WORKDAY_MAX_PAGES):
+        body = {
+            "appliedFacets": {},
+            "limit": WORKDAY_PAGE_SIZE,
+            "offset": page * WORKDAY_PAGE_SIZE,
+            "searchText": query,
+        }
+        response = requests.post(
+            url, headers=WORKDAY_JSON_HEADERS, json=body, timeout=TIMEOUT
+        )
+        response.raise_for_status()
+        payload = response.json()
+        found = normalize_workday(payload, company, tenant, wd, site)
+        rows.extend(found)
+        if len(found) < WORKDAY_PAGE_SIZE:
+            break
+    return rows
+
+
+def fetch_workday(slug: str, company: str, enrich: bool = True) -> "list[dict]":
+    """Four searches, de-duplicated on URL.
+
+    Descriptions cost one request per posting, so only rows whose title already
+    matches the include list are enriched. That keeps a daily run to a few dozen
+    requests instead of a few thousand, at the cost of never matching a Workday
+    posting on description text alone.
+    """
+    tenant, wd, site = parse_workday_slug(slug)
+    seen, rows, failures = set(), [], []
+
+    for query in WORKDAY_QUERIES:
+        try:
+            found = _workday_search(tenant, wd, site, company, query)
+        except Exception as exc:  # noqa: BLE001 - one query must not kill the rest
+            log.warning("workday %s query %r failed: %s", company, query, exc)
+            failures.append(query)
+            continue
+        new = [r for r in found if r["url"] not in seen]
+        seen.update(r["url"] for r in new)
+        rows.extend(new)
+        log.info("workday %s %r: %d rows, %d new", company, query, len(found), len(new))
+
+    if failures and len(failures) == len(WORKDAY_QUERIES):
+        raise RuntimeError("every workday search failed for " + company)
+
+    if enrich:
+        # Imported here rather than at module scope to keep sources.py free of a
+        # hard dependency on the filter rules.
+        from filters import match_include
+
+        for row in rows:
+            if not match_include(row["title"]):
+                continue
+            path = row["url"].split(site, 1)[-1] if site in row["url"] else ""
+            if not path:
+                continue
+            try:
+                detail = fetch_workday_detail(path, tenant, wd, site)
+            except Exception as exc:  # noqa: BLE001 - keep the list-level row
+                log.warning("workday detail failed for %s: %s", row["url"], exc)
+                continue
+            for key, value in detail.items():
+                if value:
+                    row[key] = value
+    return rows
+
 # --- orchestration ----------------------------------------------------------
 
 ATS_FETCHERS = {
     "greenhouse": fetch_greenhouse,
     "lever": fetch_lever,
     "ashby": fetch_ashby,
+    "workday": fetch_workday,
 }
 
 BOARD_FETCHERS = {

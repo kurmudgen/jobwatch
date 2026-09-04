@@ -261,3 +261,67 @@ def test_usajobs_headers_require_both_credentials(monkeypatch):
 def test_usajobs_handles_an_empty_result():
     assert sources.normalize_usajobs({"SearchResult": {"SearchResultItems": []}}) == []
     assert sources.normalize_usajobs({}) == []
+
+
+# --- Workday ---------------------------------------------------------------
+#
+# These fixtures were captured live from bah/wd1/BAH_Jobs, unlike the USAJOBS
+# one, so they pin the real response shape.
+
+def test_workday_list():
+    postings = sources.normalize_workday(
+        load("workday_list.json"), "Booz Allen Hamilton", "bah", "wd1", "BAH_Jobs")
+    assert_shape(postings)
+    first = postings[0]
+    assert first["source"] == "workday"
+    assert first["company"] == "Booz Allen Hamilton"
+    assert first["title"]
+    # The public URL is built from tenant/wd/site plus externalPath.
+    assert first["url"].startswith("https://bah.wd1.myworkdayjobs.com/BAH_Jobs/")
+    # The list carries no description; it costs a second request per posting.
+    assert first["description_text"] == ""
+
+
+def test_workday_skips_rows_without_a_path():
+    payload = {"jobPostings": [{"title": "No path here"}]}
+    assert sources.normalize_workday(payload, "X", "bah", "wd1", "BAH_Jobs") == []
+
+
+@pytest.mark.parametrize("slug,expected", [
+    ("bah/wd1/BAH_Jobs", ("bah", "wd1", "BAH_Jobs")),
+    ("accenture/wd103/AccentureCareers", ("accenture", "wd103", "AccentureCareers")),
+])
+def test_workday_slug_parsing(slug, expected):
+    assert sources.parse_workday_slug(slug) == expected
+
+
+@pytest.mark.parametrize("slug", ["bah", "bah/wd1", "", "bah/wd1/site/extra"])
+def test_a_bad_workday_slug_is_rejected_with_the_expected_shape(slug):
+    with pytest.raises(ValueError) as excinfo:
+        sources.parse_workday_slug(slug)
+    assert "tenant/wdNN/site" in str(excinfo.value)
+
+
+def test_workday_relative_posted_dates():
+    import datetime as dt
+    today = dt.datetime.now(dt.timezone.utc).date()
+    assert sources._workday_posted("Posted Today") == today.isoformat()
+    assert sources._workday_posted("Posted 7 Days Ago") == (
+        today - dt.timedelta(days=7)).isoformat()
+    # "30+ Days Ago" floors at 30; it is approximate by nature.
+    assert sources._workday_posted("Posted 30+ Days Ago") == (
+        today - dt.timedelta(days=30)).isoformat()
+    assert sources._workday_posted("") == ""
+    assert sources._workday_posted("Posted recently") == ""
+
+
+def test_workday_detail_shape():
+    info = load("workday_detail.json")["jobPostingInfo"]
+    # Mirrors fetch_workday_detail without the network call.
+    assert info["title"]
+    assert info["location"]
+    assert info["startDate"].startswith("20")
+    from textutil import html_to_text
+    text = html_to_text(info["jobDescription"])
+    assert "<p>" not in text and "&lt;" not in text
+    assert len(text) > 50

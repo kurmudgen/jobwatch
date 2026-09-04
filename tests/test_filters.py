@@ -652,3 +652,62 @@ def test_migration_is_additive_and_idempotent(tmp_path):
         assert store._migrate(conn) == []
     finally:
         conn.close()
+
+
+# --- partner / consulting digest section -----------------------------------
+
+def partner(**kwargs):
+    base = {
+        "source": "workday", "company": "Booz Allen Hamilton",
+        "title": "Forward Deployed Engineer", "location": "Arlington, VA",
+        "remote": False, "employment_type": "Full time",
+        "url": "https://bah.wd1.myworkdayjobs.com/BAH_Jobs/job/x",
+        "posted_at": "2026-08-27", "description_text": "", "flags": [],
+        "matched_keyword": "forward deployed", "matched_in": "title",
+        "salary_min": None, "salary_max": None,
+    }
+    base.update(kwargs)
+    return base
+
+
+def test_workday_postings_get_their_own_partner_section():
+    import digest
+    md = digest.render([partner()], by_tier=True)
+    assert "## Partner / consulting (1)" in md
+    assert "Partner: 1" in md
+    assert "Booz Allen Hamilton - Forward Deployed Engineer" in md
+
+
+def test_partner_postings_are_excluded_from_the_tier_sections():
+    import digest
+    md = digest.render([posting(title="Support Engineer", url="https://x/1"),
+                        partner()], by_tier=True)
+    tier_block = md[md.index("## Tier 1"):md.index("## Partner")]
+    assert "Booz Allen" not in tier_block
+    assert "2 matches" in md
+
+
+def test_partner_section_carries_clearance_flags():
+    import digest
+    rows = [partner(flags=["clearance:clearance,ts/sci,secret,dod"])]
+    assert "clearance:clearance,ts/sci,secret,dod" in digest.render(rows)
+    assert "clearance:clearance,ts/sci,secret,dod" in digest.render_html(rows)
+
+
+def test_all_three_sections_coexist():
+    import digest
+    rows = [posting(title="Support Engineer", url="https://x/1"),
+            partner(url="https://w/1"),
+            federal(url="https://u/1")]
+    md = digest.render(rows, by_tier=True)
+    assert md.index("## Tier 1") < md.index("## Partner") < md.index("## Federal")
+    assert "Federal: 1" in md and "Partner: 1" in md
+    html = digest.render_html(rows)
+    for heading in ("Tier 1", "Partner / consulting", "Federal (USAJOBS)"):
+        assert heading in html
+
+
+def test_partner_only_digest_still_summarises():
+    import digest
+    md = digest.render([partner()], by_tier=True)
+    assert "1 match across 1 companies" in md

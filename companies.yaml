@@ -210,3 +210,28 @@ companies:
   ats: greenhouse
   slug: chainguard
   status: verified
+- name: Booz Allen Hamilton
+  ats: workday
+  slug: bah/wd1/BAH_Jobs
+  status: verified
+  note: discovered from careers.boozallen.com; 2000 jobs on the search endpoint
+- name: Accenture
+  ats: workday
+  slug: accenture/wd103/AccentureCareers
+  status: verified
+  note: Accenture Federal Services has no separate public board (afs.accenture.com does not resolve);
+    AFS roles post here
+- name: Slalom
+  ats: avature
+  slug: jobs.slalom.com/en_US/careersmarketplace
+  status: unverified
+  note: 'NOT Workday. Avature. slalom.wd1 returns 401, wd3/wd5 return 422. Avature feed ignores keyword,
+    jobRecordsPerPage and jobOffset (always the same 20 rows); listing is JS-rendered so plain requests
+    find zero job links. Skipped: would need a browser.'
+- name: Deloitte
+  ats: avature
+  slug: apply.deloitte.com/en_US/careers/SearchJobs
+  status: unverified
+  note: Avature. SearchJobs/feed returns 20 rows and ignores keywords/keyword/q/searchText/jobKeyword/searchKeyword/3_66_3/freeText
+    and both jobRecordsPerPage and jobOffset. HTML page ignores the keyword param too. No searchable listing
+    without a browser, so skipped.

@@ -12,7 +12,10 @@ import re
 
 import requests
 
-from sources import ASHBY_URL, BROWSER_UA, GREENHOUSE_URL, LEVER_URL, TIMEOUT
+from sources import (
+    ASHBY_URL, BROWSER_UA, GREENHOUSE_URL, LEVER_URL, TIMEOUT,
+    WORKDAY_JSON_HEADERS, WORKDAY_LIST_URL, parse_workday_slug,
+)
 
 log = logging.getLogger("jobwatch.verify")
 
@@ -119,8 +122,35 @@ def _board_jobs(ats: str, slug: str) -> list:
     return payload if isinstance(payload, list) else (payload.get("jobs") or [])
 
 
+def _probe_workday(slug: str) -> "tuple[bool, str]":
+    """Workday's search is a POST, so it needs its own probe."""
+    try:
+        tenant, wd, site = parse_workday_slug(slug)
+    except ValueError as exc:
+        return False, str(exc)
+    url = WORKDAY_LIST_URL.format(tenant=tenant, wd=wd, site=site)
+    try:
+        response = requests.post(
+            url, headers=WORKDAY_JSON_HEADERS, timeout=TIMEOUT,
+            json={"appliedFacets": {}, "limit": 1, "offset": 0, "searchText": ""},
+        )
+    except Exception as exc:  # noqa: BLE001
+        return False, "request failed: " + str(exc)
+    if response.status_code != 200:
+        return False, "HTTP " + str(response.status_code)
+    try:
+        payload = response.json()
+    except ValueError:
+        return False, "non-JSON response"
+    if "jobPostings" not in payload:
+        return False, "no jobPostings in response"
+    return True, str(payload.get("total") or len(payload["jobPostings"])) + " jobs"
+
+
 def probe(ats: str, slug: str) -> "tuple[bool, str]":
     """Return (ok, detail). ok means the board returned a usable job list."""
+    if ats == "workday":
+        return _probe_workday(slug)
     template = URL_TEMPLATES.get(ats)
     if not template:
         return False, "unknown ats: " + str(ats)
@@ -148,6 +178,14 @@ def verify_company(entry: dict) -> dict:
     name = entry.get("name") or ""
     ats = (entry.get("ats") or "").lower()
     seeded = entry.get("slug") or ""
+
+    if ats == "workday":
+        ok, detail = probe(ats, seeded)
+        result["status"] = "verified" if ok else "unverified"
+        result["jobs"] = int(detail.split()[0]) if ok else 0
+        result["note"] = "" if ok else detail
+        result["tried"] = [seeded + "=" + detail]
+        return result
 
     tried = []
     for candidate in slug_variants(name, seeded):

@@ -1,0 +1,42 @@
+{
+  "total": 91,
+  "jobPostings": [
+    {
+      "title": "Forward Deployed Analyst",
+      "externalPath": "/job/Fort-Sam-Houston-TX/Forward-Deployed-Analyst_R0248073",
+      "locationsText": "Fort Sam Houston, TX",
+      "postedOn": "Posted 7 Days Ago",
+      "bulletFields": [
+        "R0248073"
+      ]
+    },
+    {
+      "title": "Forward Deployed Engineer",
+      "externalPath": "/job/Arlington-VA/Forward-Deployed-Engineer_R0247541-1",
+      "locationsText": "Arlington, VA",
+      "postedOn": "Posted 7 Days Ago",
+      "bulletFields": [
+        "R0247541"
+      ]
+    },
+    {
+      "title": "Forward-Deployed Solutions Engineer",
+      "externalPath": "/job/McLean-VA/Forward-Deployed-Solutions-Engineer_R0239454",
+      "locationsText": "McLean, VA",
+      "postedOn": "Posted Yesterday",
+      "bulletFields": [
+        "R0239454"
+      ]
+    },
+    {
+      "title": "Palantir Foundry Ontology Engineer",
+      "externalPath": "/job/San-Diego-CA/Palantir-Foundry-Ontology-Engineer_R0247868",
+      "locationsText": "2 Locations",
+      "postedOn": "Posted 9 Days Ago",
+      "bulletFields": [
+        "R0247868"
+      ]
+    }
+  ],
+  "_note": "Captured live from bah/wd1/BAH_Jobs, searchText='forward deployed', 2026-09-03."
+}

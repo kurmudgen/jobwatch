@@ -12,7 +12,7 @@ COMPANIES_FILE = ROOT / "companies.yaml"
 DB_FILE = ROOT / "jobwatch.db"
 LOG_FILE = ROOT / "jobwatch.log"
 
-VALID_ATS = ("greenhouse", "lever", "ashby")
+VALID_ATS = ("greenhouse", "lever", "ashby", "workday")
 
 
 def setup_logging(verbose: bool = False) -> logging.Logger:
@@ -59,6 +59,10 @@ def add_company(name: str, ats: str, slug: str, path: "Path | None" = None) -> d
     ats = ats.lower().strip()
     if ats not in VALID_ATS:
         raise ValueError("ats must be one of: " + ", ".join(VALID_ATS))
+    if ats == "workday" and len([x for x in slug.split("/") if x]) != 3:
+        raise ValueError(
+            "a workday slug is 'tenant/wdNN/site', e.g. bah/wd1/BAH_Jobs"
+        )
     companies = load_companies(path)
     for existing in companies:
         if (existing.get("ats") or "").lower() == ats and existing.get("slug") == slug:

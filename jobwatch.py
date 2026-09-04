@@ -44,13 +44,13 @@ def cmd_run(args) -> int:
     matches = filters.evaluate_all(postings, match_description=args.match_description)
     log.info("%d postings matched the filters", len(matches))
 
+    n_matched = len(matches)
     if args.us_remote:
-        before = len(matches)
         matches = filters.filter_us_remote(matches)
-        log.info("us-remote filter: %d -> %d", before, len(matches))
-    before = len(matches)
+        log.info("us-remote filter: %d -> %d", n_matched, len(matches))
+    n_us_remote = len(matches)
     matches = filters.dedupe(matches)
-    log.info("dedupe: %d -> %d", before, len(matches))
+    log.info("dedupe: %d -> %d", n_us_remote, len(matches))
 
     conn = store.connect()
     try:
@@ -66,8 +66,11 @@ def cmd_run(args) -> int:
         title="jobwatch: new matches",
         errors=errors,
         empty_note=(
-            "No new matches. Scanned " + str(len(postings)) + " postings, "
-            + str(len(matches)) + " matched the filters but were all seen before."
+            "No new matches. Scanned " + str(len(postings)) + " postings; "
+            + str(n_matched) + " matched the keyword filters, "
+            + str(n_us_remote) + " survived the US-remote filter, "
+            + str(len(matches)) + " after dedupe"
+            + (" - all seen before." if matches else ".")
         ),
         by_tier=args.tier,
     )

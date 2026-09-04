@@ -39,13 +39,45 @@ def _short_date(value: str) -> str:
 
 FEDERAL_SOURCE = "usajobs"
 FEDERAL_HEADING = "Federal (USAJOBS)"
+PARTNER_SOURCE = "workday"
+PARTNER_HEADING = "Partner / consulting"
 
 
 def _split_federal(postings):
-    """(federal, everything else). Federal gets its own digest section."""
+    """(federal, partner, everything else). Each gets its own section."""
     federal = [p for p in postings if p.get("source") == FEDERAL_SOURCE]
-    rest = [p for p in postings if p.get("source") != FEDERAL_SOURCE]
-    return federal, rest
+    partner = [p for p in postings if p.get("source") == PARTNER_SOURCE]
+    rest = [p for p in postings
+            if p.get("source") not in (FEDERAL_SOURCE, PARTNER_SOURCE)]
+    return federal, partner, rest
+
+
+def _render_partner_md(partner, lines):
+    lines.append("## " + PARTNER_HEADING + " (" + str(len(partner)) + ")")
+    lines.append("")
+    for posting in sorted(partner, key=lambda p: ((p.get("company") or "").lower(),
+                                                  (p.get("title") or "").lower())):
+        lines.append("- **" + (posting.get("company") or "").strip()
+                     + " - " + (posting.get("title") or "(untitled)").strip() + "**")
+        bits = []
+        if posting.get("location"):
+            bits.append((posting.get("location") or "").strip()[:120])
+        if posting.get("remote"):
+            bits.append("remote")
+        if posting.get("employment_type"):
+            bits.append((posting.get("employment_type") or "").strip())
+        posted = _short_date(posting.get("posted_at") or "")
+        if posted:
+            bits.append("posted " + posted)
+        keyword = posting.get("matched_keyword")
+        if keyword:
+            bits.append('matched "' + keyword + '"')
+        lines.append("  - " + " | ".join(bits))
+        flag_text = _flag_line(posting)
+        if flag_text:
+            lines.append("  - FLAGS: " + flag_text)
+        lines.append("  - " + (posting.get("url") or ""))
+    lines.append("")
 
 
 def _by_salary_desc(postings):
@@ -119,16 +151,16 @@ def render(
 ) -> str:
     today = dt.datetime.now().strftime("%Y-%m-%d")
     lines = ["# " + title + " - " + today, ""]
-    federal, postings = _split_federal(postings)
+    federal, partner, postings = _split_federal(postings)
 
-    if not postings and not federal:
+    if not postings and not federal and not partner:
         lines.append("_" + empty_note + "_")
     else:
-        total = len(postings) + len(federal)
-        flagged = sum(1 for p in postings + federal if p.get("flags"))
+        every = postings + federal + partner
+        total = len(every)
+        flagged = sum(1 for p in every if p.get("flags"))
         summary = str(total) + " match" + ("" if total == 1 else "es")
-        summary += " across " + str(
-            len({p.get("company") for p in postings + federal})) + " companies"
+        summary += " across " + str(len({p.get("company") for p in every})) + " companies"
         if flagged:
             summary += " (" + str(flagged) + " flagged for manual review)"
         lines.append(summary)
@@ -140,6 +172,8 @@ def render(
                      + " | Tier 3: " + str(tally[3]))
         if federal:
             tier_line += " | Federal: " + str(len(federal))
+        if partner:
+            tier_line += " | Partner: " + str(len(partner))
         lines.append(tier_line)
         lines.append("")
 
@@ -162,6 +196,9 @@ def render(
                                                             (p.get("title") or "").lower())):
                     _render_posting(posting, show_company=False, lines=lines)
                 lines.append("")
+
+    if partner:
+        _render_partner_md(partner, lines)
 
     if federal:
         lines.append("## " + FEDERAL_HEADING + " (" + str(len(federal)) + ")")
@@ -220,12 +257,12 @@ def render_html(
         return _html.escape(str(text or ""))
 
     today = dt.datetime.now().strftime("%Y-%m-%d")
-    federal, postings = _split_federal(postings)
+    federal, partner, postings = _split_federal(postings)
     out = ['<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;'
            'font-size:14px;line-height:1.5;color:#111">']
     out.append("<h2 style='margin:0 0 4px'>" + esc(title) + " &ndash; " + today + "</h2>")
 
-    if not postings and not federal:
+    if not postings and not federal and not partner:
         out.append("<p><em>" + esc(empty_note) + "</em></p></div>")
         return "\n".join(out)
 
@@ -233,13 +270,16 @@ def render_html(
     for posting in postings:
         tally[_tier(posting)] += 1
     summary = ("<p style='margin:0 0 16px;color:#555'>"
-               + str(len(postings) + len(federal)) + " matches across "
-               + str(len({p.get("company") for p in postings + federal})) + " companies"
+               + str(len(postings) + len(federal) + len(partner)) + " matches across "
+               + str(len({p.get("company") for p in postings + federal + partner}))
+               + " companies"
                + " &middot; Tier 1: " + str(tally[1])
                + " &middot; Tier 2: " + str(tally[2])
                + " &middot; Tier 3: " + str(tally[3]))
     if federal:
         summary += " &middot; Federal: " + str(len(federal))
+    if partner:
+        summary += " &middot; Partner: " + str(len(partner))
     out.append(summary + "</p>")
 
     groups = (
@@ -271,6 +311,33 @@ def render_html(
             bits.append(esc(posting.get("source")))
             out.append("<span style='color:#666'>" + " &middot; ".join(b for b in bits if b)
                        + "</span>")
+            flags = posting.get("flags") or []
+            if flags:
+                out.append("<br><span style='color:#b3261e'>FLAGS: "
+                           + esc(", ".join(flags)) + "</span>")
+            out.append("</li>")
+        out.append("</ul>")
+
+    if partner:
+        out.append("<h3 style='margin:20px 0 8px;border-bottom:1px solid #ddd;"
+                   "padding-bottom:4px'>" + esc(PARTNER_HEADING)
+                   + " (" + str(len(partner)) + ")</h3>")
+        out.append("<ul style='margin:0;padding-left:18px'>")
+        for posting in sorted(partner, key=lambda p: ((p.get("company") or "").lower(),
+                                                      (p.get("title") or "").lower())):
+            out.append("<li style='margin-bottom:10px'>")
+            out.append("<a href='" + esc(posting.get("url")) + "' style='font-weight:600;"
+                       "color:#0b57d0;text-decoration:none'>"
+                       + esc(posting.get("company")) + " &ndash; "
+                       + esc(posting.get("title")) + "</a><br>")
+            bits = [esc(posting.get("location"))]
+            if posting.get("employment_type"):
+                bits.append(esc(posting.get("employment_type")))
+            posted = _short_date(posting.get("posted_at") or "")
+            if posted:
+                bits.append("posted " + posted)
+            out.append("<span style='color:#666'>"
+                       + " &middot; ".join(b for b in bits if b) + "</span>")
             flags = posting.get("flags") or []
             if flags:
                 out.append("<br><span style='color:#b3261e'>FLAGS: "

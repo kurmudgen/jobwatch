@@ -49,6 +49,7 @@ Useful flags on `run`:
 | RemoteOK | `remoteok.com/api` (browser User-Agent required) |
 | HN Who Is Hiring | Algolia search for the current thread, then its comments |
 | USAJOBS | `data.usajobs.gov/api/search` (needs a free key, see below) |
+| Workday | `POST {tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` |
 
 Every posting is normalized to `source, company, title, location, remote,
 employment_type, url, posted_at, description_text, salary_min, salary_max`.
@@ -63,6 +64,71 @@ bottom of the digest and written to `jobwatch.log`.
 asks the date-sorted `/search_by_date` endpoint first (filtered to the
 `whoishiring` account) and keeps `/search` only as a fallback. Each top-level
 comment is one posting; the company is the text before the first pipe.
+
+## Workday (partner / consulting)
+
+Workday exposes an unauthenticated JSON search per tenant. In `companies.yaml`
+the slug is the composite **`tenant/wdNN/site`** — all three parts vary per
+company and are found by reading the company's public careers redirect:
+
+```yaml
+  - {name: Booz Allen Hamilton, ats: workday, slug: bah/wd1/BAH_Jobs}
+  - {name: Accenture, ats: workday, slug: accenture/wd103/AccentureCareers}
+```
+
+Four `searchText` queries run per company — Anthropic, forward deployed, Claude,
+solutions engineer — de-duplicated on URL.
+
+Verified against the live API:
+
+- `limit` is capped at **20**; 50 and 100 both return zero rows. `offset` pages
+  correctly, so the fetcher pages 3 deep per query (60 rows).
+- `searchText` is a **loose stemmed OR match, not a phrase filter**. "Claude"
+  returns 977 hits led by *Cloud Engineer*; "solutions engineer" returns 1053,
+  essentially everything containing either word. "Anthropic" is the one precise
+  query, returning 2. The searches only widen the net — the normal title rules
+  do the real filtering afterwards.
+- The list response carries no description. Descriptions cost one extra request
+  each, so only rows whose **title** already matches the include list are
+  enriched. A daily run is a few dozen requests rather than a few thousand, at
+  the cost of never matching a Workday posting on description text alone.
+- `postedOn` is relative text ("Posted 7 Days Ago"). The detail call returns a
+  real `startDate` and is preferred; the relative string is parsed only as a
+  fallback and is approximate ("30+ Days Ago" floors at 30 days).
+
+Results appear under **Partner / consulting** in the digest.
+
+**Expect this section to be empty most days.** Both tenants return plenty of
+matching titles — 18 passed the keyword filters on the first live run — but
+**zero** survived `--us-remote`, because consulting roles are tied to duty
+stations: McLean, Arlington, Fort Sam Houston, Hyderabad, Manila, London. Run
+`--no-us-remote` to see them (16 on that run, 10 carrying clearance flags).
+
+### Slalom and Deloitte: skipped, and why
+
+Neither is on Workday. Both are **Avature**, and neither exposes a searchable
+listing that plain `requests` can use, so both are recorded `unverified` in
+`companies.yaml` with the reason and are skipped on every run. No browser
+dependency was added, per the brief.
+
+What was tested:
+
+| Check | Result |
+| --- | --- |
+| `slalom.wd1/wd3/wd5` Workday tenants | 401 / 422 / 422 |
+| `jobs.slalom.com/wday/cxs/...` | 404 HTML — not a Workday custom domain |
+| Avature `SearchJobs/feed/` | 200, but a fixed 20 rows |
+| `keywords`, `keyword`, `q`, `searchText`, `jobKeyword`, `searchKeyword`, `3_66_3`, `freeText` | all ignored — identical results every time |
+| `jobRecordsPerPage=100/200`, `jobOffset=20` | ignored — same 20 rows |
+| Deloitte `SearchJobs` HTML with `?keywords=` | 200, but the same 10 jobs |
+| Slalom `SearchJobs` HTML | 0 job links — the listing is JS-rendered |
+
+So the only reachable Deloitte/Slalom data is a fixed 20-item recent-jobs
+window with no search, which at their posting volume would essentially never
+surface a match. Re-check if Avature ever exposes a real search parameter.
+
+Accenture Federal Services has no separate public board — `afs.accenture.com`
+does not resolve — so AFS roles come through the main Accenture tenant.
 
 ## USAJOBS (federal)
 
