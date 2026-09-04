@@ -300,3 +300,43 @@ Arlington, Fort Sam Houston, Hyderabad, Manila, London). Use --no-us-remote to
 see them: 16 matches, 10 carrying clearance flags.
 Still outstanding from before: no USAJOBS key, so that source has never run live
 and its fixture is hand-built.
+
+## 2026-09-03 — USAJOBS key arrived, source fixed against the live API
+
+34. Key in .env (gitignored). Verified absent from tracked files, git history,
+    and jobwatch.log. USAJOBS_EMAIL=jspradlin06@gmail.com.
+35. The source authenticated first try but returned ZERO rows. Three assumptions
+    carried over from the published schema were wrong:
+    - RemoteIndicator=True as a QUERY param is the cause of the zero. Alone it
+      returns 41 jobs government-wide, NONE in category 2210 (medical officers,
+      patent examiners, attorneys), so 2210 + RemoteIndicator = 0 every time.
+      No longer sent; the location rule decides. Flip
+      sources.USAJOBS_SEND_REMOTE_INDICATOR to restore it.
+      Also: PayGradeLow wants "11"; "GS-11" returns HTTP 400.
+    - WhoMayApply is EMPTY on all 100 records measured, so the not-open flag
+      could never have fired from it. HiringPathDisplay is the real signal
+      ("Open to the public" on 75/100). A non-public path now becomes the
+      sentence "Not open to the public." for the flag rules.
+    - SecurityClearance is a structured field ("Secret"/"Top Secret"/"Sensitive
+      Compartmented Information"/"Not Required"), now used instead of prose.
+      194 of 250 filtered postings carry a clearance flag.
+    Plus: PositionURI carries ":443", now stripped so one posting cannot be
+    keyed under two URLs.
+    Correct as written: RemoteIndicator IS in UserArea.Details not the
+    descriptor (checking both paid off), and 4-digit fractional-second
+    timestamps parse fine.
+36. Fixture re-captured LIVE, 4 cases: remote/negotiable, not-open, clearance,
+    plain. 200 tests passing.
+
+### Live full run (all sources)
+494 matched the keyword filters -> 40 survived us-remote -> 35 after dedupe.
+5 new: 4 Federal + 1 Tier 3. Federal top: Treasury IT Specialist (AI) $197,200,
+Location Negotiable After Selection.
+
+## STOP POINT — 2026-09-03 (USAJOBS live)
+Nothing blocked. All five source types work against live APIs: greenhouse,
+lever, ashby, workday, usajobs, plus remotive/remoteok/hn boards.
+Only remaining known gap: Slalom + Deloitte (Avature) still skipped - no
+searchable listing without a browser.
+Daily: "run jobwatch and send me the digest" (connector; attach the HTML file,
+never put URLs in the body).
