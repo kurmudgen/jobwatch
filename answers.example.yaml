@@ -1,0 +1,160 @@
+# Standard answers to the questions that repeat across application forms.
+#
+# Copy to answers.yaml and fill it in. answers.yaml is gitignored; this template
+# is not, so keep real values (salary expectations, phone number, clearance
+# level) out of this file.
+#
+# How matching works: for each question on a form, the first entry whose `match`
+# list contains a phrase appearing in the question wins. Order matters - put the
+# specific entries above the general ones, because "Are you authorized to work
+# without sponsorship?" contains both "authorized to work" and "sponsorship".
+
+profile:
+  first_name: ""
+  last_name: ""
+  preferred_first_name: ""
+  email: ""
+  phone: ""
+  linkedin: ""
+  github: ""
+  website: ""
+  city_state: ""
+  country: ""
+
+answers:
+  # --- put combined questions first ---------------------------------------
+  - id: authorized_without_sponsorship
+    match:
+      - "authorized to work in the united states without requiring visa sponsorship"
+      - "authorized to work without requiring sponsorship"
+      - "currently authorized to work in the united states without"
+    answer: ""
+
+  # --- then the single-topic ones ------------------------------------------
+  - id: sponsorship
+    match:
+      - "require sponsorship"
+      - "require visa sponsorship"
+      - "employment sponsorship"
+      - "sponsor you for a work permit"
+      - "h-1b"
+    answer: ""
+
+  - id: work_authorization
+    match:
+      - "authorized to work"
+      - "authorised to work"
+      - "eligible to work"
+      - "work authorization"
+      - "legally authorized"
+      - "legally authorised"
+    answer: ""
+
+  - id: location_city_state
+    match:
+      - "what city and state"
+      - "in what cities are you available"
+      - "in what location(s) are you available"
+      - "where do you plan to work from"
+      - "city and state do you reside"
+    answer: ""
+
+  - id: country_of_residence
+    match:
+      - "country where you currently reside"
+      - "country or countries you anticipate working"
+      - "what country and time zone"
+      - "select the country"
+    answer: ""
+
+  - id: remote_plan
+    match:
+      - "do you plan to work remotely"
+      - "if this role offers the option to work from a remote location"
+    answer: ""
+
+  - id: how_heard
+    match:
+      - "how did you hear"
+    answer: ""
+
+  - id: current_employer
+    match:
+      - "current or previous employer"
+      - "current employer"
+    answer: ""
+
+  - id: current_title
+    match:
+      - "current or previous job title"
+      - "current job title"
+    answer: ""
+
+  - id: compensation
+    match:
+      - "compensation expectations"
+      - "salary expectations"
+      - "desired salary"
+    answer: ""
+
+  - id: previously_employed
+    match:
+      - "ever been employed by"
+    answer: ""
+
+  - id: github_handle
+    match:
+      - "github handle"
+      - "github profile"
+    answer: ""
+
+  - id: sanctioned_countries
+    match:
+      - "cuba, iran, north korea"
+    answer: ""
+
+  # Clearance answers are yours to write. Nothing is pre-filled here on purpose.
+  - id: clearance_level
+    match:
+      - "security clearance level"
+      - "active u.s. government security clearance"
+      - "hold an active"
+    answer: ""
+
+  # Consent and acknowledgement checkboxes. Read them before agreeing.
+  - id: acknowledgement
+    match:
+      - "i certify that the information provided"
+      - "candidate privacy policy"
+      - "applicant privacy policy"
+      - "responsible use policy"
+      - "brighthire"
+      - "acknowledge"
+      - "opt-in to receive"
+    answer: ""
+
+  # --- long-form answers ---------------------------------------------------
+  # These are per-question rather than per-topic. Keep them in your own voice.
+  - id: why_solutions_engineer
+    match:
+      - "why are you interested in a solutions engineer role"
+      - "why you're interested in this role"
+      - "why this role"
+    answer: ""
+
+  - id: kubernetes_experience
+    match:
+      - "experience with kubernetes"
+      - "kubernetes and containers"
+    answer: ""
+
+  - id: owned_end_to_end_delivery
+    match:
+      - "owned the end-to-end delivery"
+    answer: ""
+
+  - id: constrained_environment
+    match:
+      - "constrained environment"
+      - "deploy or operate software in a constrained"
+    answer: ""

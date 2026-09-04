@@ -859,19 +859,32 @@ def test_non_greenhouse_postings_are_reported_not_fetched():
     assert rows[0]["form_note"] == "not greenhouse"
 
 
-def test_render_lists_repeated_questions_once_with_a_count():
+def _form(**kw):
+    base = {"total": 5, "required": 5, "specific": ["Work auth?"], "essays": [],
+            "demographic": False, "deadline": None}
+    base.update(kw)
+    return base
+
+
+def test_render_lists_unanswered_questions_once_with_a_count():
     import forms
-    rows = [
-        gh(url="https://x/1", form={"total": 5, "required": 5, "specific": ["Work auth?"],
-                                    "essays": [], "demographic": False, "deadline": None},
-           form_note=""),
-        gh(url="https://x/2", form={"total": 5, "required": 5, "specific": ["Work auth?"],
-                                    "essays": [], "demographic": False, "deadline": None},
-           form_note=""),
-    ]
+    rows = [gh(url="https://x/1", form=_form(), form_note=""),
+            gh(url="https://x/2", form=_form(), form_note="")]
     out = forms.render(rows)
-    assert "questions worth answering once" in out
+    assert "answer coverage: 0/1" in out
     assert "(2x) Work auth?" in out
+    assert "[no answer yet]" in out
+
+
+def test_render_prints_the_answer_when_one_exists():
+    import forms
+    book = {"profile": {}, "answers": [
+        {"id": "work_auth", "match": ["work auth"], "answer": "Yes, US citizen."}]}
+    rows = [gh(url="https://x/1", form=_form(), form_note="")]
+    out = forms.render(rows, book)
+    assert "A Yes, US citizen." in out
+    assert "answer coverage: 1/1" in out
+    assert "[no answer yet]" not in out
 
 
 # --- applied tracking ------------------------------------------------------
@@ -910,3 +923,86 @@ def test_applied_postings_are_hidden_from_recent(tmp_path):
         assert [r["url"] for r in visible] == ["https://x/2"]
     finally:
         conn.close()
+
+
+# --- answer matching -------------------------------------------------------
+
+BOOK = {
+    "profile": {"first_name": "Jacob", "email": "j@example.com", "github": "kurmudgen"},
+    "answers": [
+        {"id": "authorized_without_sponsorship",
+         "match": ["authorized to work in the united states without requiring visa sponsorship"],
+         "answer": "Yes."},
+        {"id": "sponsorship", "match": ["require sponsorship", "h-1b"], "answer": "No."},
+        {"id": "work_authorization", "match": ["authorized to work"], "answer": "Yes, US citizen."},
+        {"id": "blank_on_purpose", "match": ["compensation expectations"], "answer": ""},
+    ],
+}
+
+
+def test_profile_fields_answer_boilerplate_labels():
+    import answers
+    assert answers.answer_for("First Name", BOOK)[0] == "Jacob"
+    assert answers.answer_for("Email", BOOK)[0] == "j@example.com"
+    assert answers.answer_for("GitHub handle", BOOK)[0] == "kurmudgen"
+    # An empty profile field is unanswered, not a blank answer.
+    assert answers.answer_for("Phone", BOOK)[0] is None
+
+
+def test_the_combined_question_wins_over_the_single_topic_ones():
+    """"authorized to work without requiring sponsorship" contains both
+    "authorized to work" and "sponsorship"; file order decides."""
+    import answers
+    value, source = answers.answer_for(
+        "Are you currently authorized to work in the United States without "
+        "requiring visa sponsorship, now or in the future?", BOOK)
+    assert source == "authorized_without_sponsorship"
+    assert value == "Yes."
+
+
+def test_wording_variants_reach_the_same_answer():
+    import answers
+    for label in ["Are you legally authorized to work?",
+                  "Are you authorized to work in the location(s) you selected?"]:
+        assert answers.answer_for(label, BOOK)[1] == "work_authorization"
+
+
+def test_an_empty_answer_counts_as_unanswered():
+    import answers
+    assert answers.answer_for("What are your compensation expectations?", BOOK) == (None, None)
+
+
+def test_an_unmatched_question_returns_nothing():
+    import answers
+    assert answers.answer_for("Do you like cats?", BOOK) == (None, None)
+    assert answers.answer_for("", BOOK) == (None, None)
+
+
+def test_coverage_counts_distinct_questions_across_forms():
+    import answers
+    rows = [
+        {"form": {"specific": ["Are you authorized to work?"], "essays": []}},
+        {"form": {"specific": ["Are you authorized to work?", "Do you like cats?"],
+                  "essays": []}},
+        {"form": None},
+    ]
+    cover = answers.coverage(rows, BOOK)
+    assert cover["total"] == 2
+    assert cover["answered"] == 1
+    assert cover["missing"] == ["Do you like cats?"]
+
+
+def test_a_missing_answers_file_is_not_an_error(tmp_path):
+    import answers
+    book = answers.load(tmp_path / "nope.yaml")
+    assert book == {"profile": {}, "answers": []}
+    assert answers.answer_for("anything", book) == (None, None)
+
+
+def test_the_example_template_ships_with_every_answer_blank():
+    """answers.example.yaml is committed, so it must never carry real values."""
+    import answers
+    book = answers.load(answers.EXAMPLE_FILE)
+    assert book["answers"], "template should list the questions"
+    assert all(not (e.get("answer") or "").strip() for e in book["answers"])
+    assert all(not str(v or "").strip() for v in book["profile"].values())

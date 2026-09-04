@@ -364,6 +364,25 @@ forms, and those postings are listed separately as "form not readable".
 employer's board key, which an applicant does not have, and mass auto-submission
 is against most boards' terms. This is triage and preparation.
 
+### answers.yaml
+
+Copy `answers.example.yaml` to `answers.yaml` and fill it in; `forms` then
+prints your answer under each question instead of just the question, and reports
+coverage (`answer coverage: 9/28 distinct questions`) plus what is still to
+write, most-repeated first.
+
+`answers.yaml` is **gitignored** — this repo is public, so real values
+(compensation, phone, clearance level) must never be committed. The example file
+ships with every field blank and a test enforces that.
+
+Matching is by phrase, in file order, because boards word the same question a
+dozen ways — "legally authorized to work", "authorised to work full-time in the
+country where this job is based", "currently eligible to work in your country of
+residence" all resolve to one answer. **Order matters:** a combined question
+like "authorized to work *without requiring sponsorship*" contains both
+"authorized to work" and "sponsorship", so the combined entry has to sit above
+the single-topic ones. An entry with an empty answer counts as unanswered.
+
 ## Applied tracking
 
 `python jobwatch.py applied --url <url>` records that an application went in.

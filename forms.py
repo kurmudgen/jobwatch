@@ -134,8 +134,13 @@ def collect_forms(postings: "list[dict]", companies: "list[dict]") -> "list[dict
     return out
 
 
-def render(rows: "list[dict]") -> str:
-    """Plain-text triage table, easiest application first."""
+def render(rows: "list[dict]", book: "dict | None" = None) -> str:
+    """Plain-text triage table, easiest application first.
+
+    With an answers book loaded, each question is printed with the answer to
+    paste; without one, just the question."""
+    import answers as answers_mod
+    book = book if book is not None else {"profile": {}, "answers": []}
     resolved = [r for r in rows if r.get("form")]
     unresolved = [r for r in rows if not r.get("form")]
     lines = ["# application triage", ""]
@@ -153,11 +158,13 @@ def render(rows: "list[dict]") -> str:
                 head += ", " + str(len(form["essays"])) + " written"
             head += "]"
             lines.append(head)
-            for label in form["specific"]:
-                lines.append("    ? " + label)
-            for label in form["essays"]:
-                if label not in form["specific"]:
-                    lines.append("    write: " + label)
+            annotated = answers_mod.annotate(form, book)
+            for label, value, _source in annotated["resolved"]:
+                lines.append("    Q " + label)
+                indented = value.replace(chr(10), chr(10) + "      ")
+                lines.append("    A " + indented)
+            for label in annotated["missing"]:
+                lines.append("    ? " + label + "   [no answer yet]")
             if form["deadline"]:
                 lines.append("    deadline: " + str(form["deadline"]))
             lines.append("    " + (row.get("url") or ""))
@@ -171,14 +178,21 @@ def render(rows: "list[dict]") -> str:
             lines.append("    " + (row.get("url") or ""))
         lines.append("")
 
-    questions = {}
-    for row in resolved:
-        for label in row["form"]["specific"] + row["form"]["essays"]:
-            questions[label] = questions.get(label, 0) + 1
-    if questions:
-        lines.append("## questions worth answering once")
-        for label, count in sorted(questions.items(), key=lambda kv: -kv[1]):
-            lines.append("- (" + str(count) + "x) " + label)
+    cover = answers_mod.coverage(rows, book)
+    if cover["total"]:
+        lines.append("## answer coverage: " + str(cover["answered"]) + "/"
+                     + str(cover["total"]) + " distinct questions")
+        if cover["missing"]:
+            counts = {}
+            for row in resolved:
+                for label in row["form"]["specific"] + row["form"]["essays"]:
+                    if label in cover["missing"]:
+                        counts[label] = counts.get(label, 0) + 1
+            lines.append("")
+            lines.append("Still to write, most-repeated first "
+                         "(add these to answers.yaml):")
+            for label, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+                lines.append("- (" + str(count) + "x) " + label)
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"

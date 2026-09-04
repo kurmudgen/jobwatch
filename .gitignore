@@ -1,6 +1,7 @@
-# secrets
+# secrets and personal data
 .env
 .env.local
+answers.yaml
 
 # runtime data
 jobwatch.db

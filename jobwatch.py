@@ -13,6 +13,7 @@ import argparse
 import sys
 
 import config
+import answers as answers_mod
 import digest
 import filters
 import forms
@@ -169,7 +170,11 @@ def cmd_forms(args) -> int:
     if args.only_tier:
         rows = [r for r in rows
                 if filters.compute_tier(r.get("title") or "") == args.only_tier]
-    print(forms.render(forms.collect_forms(rows, config.load_companies())))
+    book = answers_mod.load()
+    if not (book["profile"] or book["answers"]):
+        print("No answers.yaml yet - copy answers.example.yaml and fill it in "
+              "to get answers printed alongside the questions.", file=sys.stderr)
+    print(forms.render(forms.collect_forms(rows, config.load_companies()), book))
     return 0
 
 
