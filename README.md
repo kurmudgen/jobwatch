@@ -150,14 +150,39 @@ Four searches run per poll, one per keyword, de-duplicated on URL:
 ```
 JobCategoryCode=2210        IT Specialist
 Keyword=                    solutions | customer support | applications | cybersecurity
-RemoteIndicator=True
-PayGradeLow=11
+PayGradeLow=11              ("11", not "GS-11" - that returns HTTP 400)
 ```
+
+**`RemoteIndicator=True` is deliberately not sent.** Measured against the live
+API: on its own it returns 41 jobs government-wide, **none of them category
+2210** — they are medical officers, patent examiners and attorneys — so
+combining it with `JobCategoryCode=2210` returns exactly zero, every time.
+Dropping it and letting the location rule decide finds the roles that actually
+exist: 4 remote GS-11+ IT roles, including an **IT Specialist (AI) at
+$197,200**, all tagged "Location Negotiable After Selection". Flip
+`sources.USAJOBS_SEND_REMOTE_INDICATOR` to restore the server-side filter.
 
 `remote` is set True **only** on an explicit `RemoteIndicator`, or when the
 location says "Anywhere in the U.S." or "Location Negotiable After Selection".
-The indicator has appeared in two places across API revisions, so both are
-checked, and the string `"false"` is not treated as truthy.
+Confirmed against live data: the indicator sits in `UserArea.Details`, not on
+the descriptor. Both are still checked, and the string `"false"` is not treated
+as truthy.
+
+Two more things the live data corrected:
+
+- **`WhoMayApply` is empty on every record measured** (100 of 100), so it cannot
+  carry the eligibility flag by itself. `HiringPathDisplay` is the real signal —
+  "Open to the public" on 75 of 100, the rest restricted to competitive service,
+  veterans, military spouses and so on. The normalizer turns a non-public hiring
+  path into the sentence "Not open to the public.", which the `not-open` flag
+  matches alongside your two original phrases.
+- **`SecurityClearance` is a structured field** ("Secret", "Top Secret",
+  "Sensitive Compartmented Information", "Not Required"), which is far more
+  reliable than regexing prose. It is folded into the description so the
+  `clearance` flag reads it.
+
+`PositionURI` comes back as `https://www.usajobs.gov:443/job/123`; the port is
+stripped so the same posting cannot be keyed under two URLs.
 
 Salaries are annualized before comparison — a per-hour posting is multiplied by
 the 2087-hour OPM work year — so hourly and yearly roles sort against each other
@@ -176,12 +201,9 @@ with `matched_in: usajobs query`.
 `supervisory` was added to the exclusions as the federal spelling of a
 management role, alongside manager, director, head of and vp.
 
-**Caveat:** the normalizer follows USAJOBS' published Search API schema but has
-**not** been checked against a live response — the endpoint returns 401 to every
-request without a real key. Every field access is defensive, and
-`tests/fixtures/usajobs.json` is hand-built from the documented schema rather
-than captured. Re-capture that fixture and re-check the field names the first
-time a key is available.
+`tests/fixtures/usajobs.json` is **captured live** (2026-09-03) and covers four
+cases: a Location-Negotiable remote role, a not-open role, one requiring a
+clearance, and a plain one.
 
 ## Filters
 

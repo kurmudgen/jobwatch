@@ -362,6 +362,16 @@ def fetch_hn() -> "list[dict]":
 # defensive. Re-verify the first time a key is available.
 
 USAJOBS_URL = "https://data.usajobs.gov/api/search"
+
+# RemoteIndicator=True is deliberately NOT sent as a query parameter. Measured
+# against the live API on 2026-09-03: RemoteIndicator=True alone returns 41 jobs
+# government-wide, none of them category 2210 (they are medical officers, patent
+# examiners and attorneys), so combining it with JobCategoryCode=2210 returns
+# exactly zero every time. Dropping it and letting the location rule below decide
+# finds the roles that actually exist - 4 remote GS-11+ IT roles, including an
+# IT Specialist (AI) at $197,200, all tagged "Location Negotiable After
+# Selection". Set this True to restore the server-side filter.
+USAJOBS_SEND_REMOTE_INDICATOR = False
 USAJOBS_CATEGORY = "2210"          # IT Specialist
 USAJOBS_PAY_GRADE_LOW = "11"
 USAJOBS_KEYWORDS = ("solutions", "customer support", "applications", "cybersecurity")
@@ -452,6 +462,43 @@ def _usajobs_who_may_apply(details: dict) -> str:
     return str(who or "").strip()
 
 
+# Measured on 100 live records: WhoMayApply.Name was empty on all 100, so it
+# cannot carry the eligibility flag on its own. HiringPathDisplay is populated
+# and is the real signal - "Open to the public" on 75 of 100, with the rest
+# restricted to competitive-service, veterans, military spouses and so on.
+USAJOBS_PUBLIC_HIRING_PATH = "open to the public"
+
+
+def _usajobs_eligibility(details: dict) -> str:
+    """A sentence describing who may apply, for the flag rules to read."""
+    paths = details.get("HiringPathDisplay") or details.get("HiringPath") or []
+    if isinstance(paths, str):
+        paths = [paths]
+    labels = [str(p).strip() for p in paths if str(p).strip()]
+    who = _usajobs_who_may_apply(details)
+
+    parts = []
+    if labels:
+        joined = ", ".join(labels)
+        if not any(USAJOBS_PUBLIC_HIRING_PATH in l.lower() for l in labels):
+            # Canonical wording so the not-open rule in filters.py catches it.
+            parts.append("Not open to the public. Eligibility: " + joined + ".")
+        else:
+            parts.append("Eligibility: " + joined + ".")
+    if who:
+        parts.append("Who may apply: " + who)
+    return " ".join(parts)
+
+
+def _usajobs_clearance(details: dict) -> str:
+    """SecurityClearance is structured ("Secret", "Top Secret", "Sensitive
+    Compartmented Information", "Not Required"), which beats regexing prose."""
+    value = str(details.get("SecurityClearance") or "").strip()
+    if not value or value.lower() in ("not required", "none", "q - nonsensitive"):
+        return ""
+    return "Security clearance required: " + value + "."
+
+
 def normalize_usajobs(payload: dict) -> "list[dict]":
     out = []
     result = payload.get("SearchResult") or {}
@@ -484,12 +531,12 @@ def normalize_usajobs(payload: dict) -> "list[dict]":
 
         # WhoMayApply carries the eligibility restriction the not-open flag
         # looks for, so it has to land in the text the filters read.
-        who = _usajobs_who_may_apply(details)
         description = "\n\n".join(part for part in (
             html_to_text(details.get("JobSummary")),
             html_to_text(descriptor.get("QualificationSummary")),
             html_to_text(details.get("Requirements")),
-            ("Who may apply: " + who) if who else "",
+            _usajobs_clearance(details),
+            _usajobs_eligibility(details),
         ) if part)
 
         salary_min, salary_max = _usajobs_salary(descriptor)
@@ -502,6 +549,8 @@ def normalize_usajobs(payload: dict) -> "list[dict]":
         url = descriptor.get("PositionURI") or (
             apply_uri[0] if isinstance(apply_uri, list) and apply_uri else ""
         )
+        # Live responses carry "https://www.usajobs.gov:443/job/123".
+        url = url.replace("://www.usajobs.gov:443/", "://www.usajobs.gov/")
 
         out.append(_posting(
             source="usajobs",
@@ -532,10 +581,11 @@ def fetch_usajobs() -> "list[dict]":
         query = {
             "JobCategoryCode": USAJOBS_CATEGORY,
             "Keyword": keyword,
-            "RemoteIndicator": "True",
             "PayGradeLow": USAJOBS_PAY_GRADE_LOW,
             "ResultsPerPage": "250",
         }
+        if USAJOBS_SEND_REMOTE_INDICATOR:
+            query["RemoteIndicator"] = "True"
         url = USAJOBS_URL + "?" + urlencode(query)
         try:
             found = normalize_usajobs(_get_json(url, headers=headers))

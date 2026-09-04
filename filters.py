@@ -58,7 +58,13 @@ ELIGIBILITY_PHRASES = ["not eligible", "excluding", "except"]
 
 # Federal postings that are closed to the public. USAJOBS puts this in
 # WhoMayApply, which the normalizer folds into description_text.
-NOT_OPEN_PHRASES = ["current federal employees only", "internal to agency"]
+NOT_OPEN_PHRASES = [
+    "current federal employees only",
+    "internal to agency",
+    # USAJOBS leaves WhoMayApply empty on every record measured, so the
+    # normalizer derives this wording from HiringPath instead.
+    "not open to the public",
+]
 
 # "secret" on its own is far too loose - "our globally distributed team is our
 # secret weapon" was flagging every Supabase support role as needing a security

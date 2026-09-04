@@ -176,70 +176,108 @@ def test_a_blank_password_is_reported_as_missing(monkeypatch):
 
 # --- USAJOBS ---------------------------------------------------------------
 #
-# The fixture is hand-built from the published schema, not captured live: the
-# endpoint 401s without a real Authorization-Key. These tests pin the
-# normalizer's behaviour, not the API's actual field names.
+# The fixture is CAPTURED LIVE from data.usajobs.gov (2026-09-03), so these
+# pin the real response shape. Each item carries a _fixture_case label:
+# remote/negotiable, not-open, clearance, hourly-or-plain.
 
-def test_usajobs():
+def usajobs_rows():
+    payload = load("usajobs.json")
+    labels = [i["_fixture_case"] for i in payload["SearchResult"]["SearchResultItems"]]
+    return dict(zip(labels, sources.normalize_usajobs(payload)))
+
+
+def test_usajobs_shape():
     postings = sources.normalize_usajobs(load("usajobs.json"))
     assert_shape(postings)
     assert len(postings) == 4
-    first = postings[0]
-    assert first["source"] == "usajobs"
-    assert first["company"] == "Cybersecurity and Infrastructure Security Agency"
-    assert first["title"] == "IT Specialist (Customer Support)"
-    assert first["location"] == "Anywhere in the U.S. (remote job)"
-    assert first["url"] == "https://www.usajobs.gov/job/830000100"
-    assert first["employment_type"] == "Full-time, Permanent"
-    assert first["posted_at"].startswith("2026-09-01")
-    # JobSummary arrives as HTML and must be flattened.
-    assert "<p>" not in first["description_text"]
-    assert "tier 2 customer support" in first["description_text"].lower()
+    for posting in postings:
+        assert posting["source"] == "usajobs"
+        assert posting["company"]
+        assert posting["url"].startswith("https://www.usajobs.gov/job/")
 
 
-def test_usajobs_remote_only_when_declared_or_no_duty_station():
-    by_title = {p["title"]: p for p in sources.normalize_usajobs(load("usajobs.json"))}
-    # RemoteIndicator true
-    assert by_title["IT Specialist (Customer Support)"]["remote"] is True
-    # No RemoteIndicator, but "Location Negotiable After Selection"
-    assert by_title["IT Specialist (Applications Software)"]["remote"] is True
-    # RemoteIndicator false and a real duty station
-    assert by_title["IT Specialist (Solutions Engineer)"]["remote"] is False
-    # RemoteIndicator as the string "false" must not read as truthy
-    assert by_title["Supervisory IT Specialist (Customer Support)"]["remote"] is False
+def test_usajobs_strips_the_port_from_position_uri():
+    """Live PositionURI values come back as "https://www.usajobs.gov:443/job/1",
+    which would key the same posting twice if the format ever changed."""
+    raw = load("usajobs.json")["SearchResult"]["SearchResultItems"][0]
+    assert ":443" in raw["MatchedObjectDescriptor"]["PositionURI"]
+    assert all(":443" not in p["url"] for p in sources.normalize_usajobs(load("usajobs.json")))
 
 
-def test_usajobs_salary_is_annualized():
-    by_title = {p["title"]: p for p in sources.normalize_usajobs(load("usajobs.json"))}
-    annual = by_title["IT Specialist (Customer Support)"]
-    assert annual["salary_min"] == 103409.0
-    assert annual["salary_max"] == 134435.0
-    # Per-hour rates are multiplied by the 2087-hour OPM work year so they can
-    # be sorted against per-year postings.
-    hourly = by_title["IT Specialist (Solutions Engineer)"]
-    assert hourly["salary_max"] == 60.00 * 2087
-    assert hourly["salary_min"] == 45.50 * 2087
-    # No PositionRemuneration at all
-    none_published = by_title["Supervisory IT Specialist (Customer Support)"]
-    assert none_published["salary_max"] is None
+def test_usajobs_remote_only_on_indicator_or_no_duty_station():
+    rows = usajobs_rows()
+    assert rows["remote/negotiable"]["location"] == "Location Negotiable After Selection"
+    assert rows["remote/negotiable"]["remote"] is True
+    # A named duty station is not remote, whatever else the posting says.
+    assert rows["not-open"]["remote"] is False
+    assert rows["hourly-or-plain"]["remote"] is False
 
 
-def test_usajobs_who_may_apply_reaches_the_description():
-    """The not-open flag reads description_text, so WhoMayApply has to land there."""
+def test_usajobs_salary_is_parsed_and_annualized():
+    rows = usajobs_rows()
+    for row in rows.values():
+        assert row["salary_max"] is None or row["salary_max"] > 0
+    negotiable = rows["remote/negotiable"]
+    assert negotiable["salary_min"] and negotiable["salary_max"]
+    assert negotiable["salary_max"] > negotiable["salary_min"]
+    # Per-hour rates scale by the 2087-hour OPM work year.
+    assert sources._RATE_TO_ANNUAL["PH"] == 2087.0
+    assert sources._RATE_TO_ANNUAL["PA"] == 1.0
+
+
+def test_usajobs_eligibility_comes_from_hiring_path_not_who_may_apply():
+    """Measured across 100 live records, WhoMayApply.Name was empty on all of
+    them. HiringPathDisplay is the field that actually carries eligibility."""
     import filters
-    by_title = {p["title"]: p for p in sources.normalize_usajobs(load("usajobs.json"))}
-    restricted = by_title["IT Specialist (Applications Software)"]
-    assert "current federal employees only" in restricted["description_text"].lower()
-    flags = filters.compute_flags(restricted["description_text"])
-    assert "not-open:current federal employees only" in flags
-
-    internal = by_title["Supervisory IT Specialist (Customer Support)"]
-    assert "not-open:internal to agency" in filters.compute_flags(
-        internal["description_text"])
-
-    open_role = by_title["IT Specialist (Customer Support)"]
+    rows = usajobs_rows()
+    restricted = rows["not-open"]
+    assert "not open to the public" in restricted["description_text"].lower()
+    assert "not-open:not open to the public" in filters.compute_flags(
+        restricted["description_text"])
+    # A public posting must not be flagged.
     assert not any(f.startswith("not-open") for f in
-                   filters.compute_flags(open_role["description_text"]))
+                   filters.compute_flags(rows["remote/negotiable"]["description_text"]))
+
+
+def test_usajobs_clearance_comes_from_the_structured_field():
+    import filters
+    rows = usajobs_rows()
+    assert "security clearance required" in rows["clearance"]["description_text"].lower()
+    assert any(f.startswith("clearance:") for f in
+               filters.compute_flags(rows["clearance"]["description_text"]))
+
+
+def test_usajobs_not_required_clearance_does_not_flag():
+    assert sources._usajobs_clearance({"SecurityClearance": "Not Required"}) == ""
+    assert sources._usajobs_clearance({}) == ""
+    assert "Secret" in sources._usajobs_clearance({"SecurityClearance": "Secret"})
+
+
+def test_usajobs_eligibility_wording():
+    public = sources._usajobs_eligibility({"HiringPathDisplay": ["Open to the public"]})
+    assert "not open to the public" not in public.lower()
+    restricted = sources._usajobs_eligibility(
+        {"HiringPathDisplay": ["Competitive service", "Veterans"]})
+    assert restricted.startswith("Not open to the public.")
+    assert sources._usajobs_eligibility({}) == ""
+
+
+def test_usajobs_does_not_send_remote_indicator_by_default():
+    """RemoteIndicator=True combined with JobCategoryCode=2210 returned exactly
+    zero rows on the live API; the location rule does the work instead."""
+    assert sources.USAJOBS_SEND_REMOTE_INDICATOR is False
+
+
+def test_usajobs_descriptions_are_flattened():
+    for row in sources.normalize_usajobs(load("usajobs.json")):
+        assert "<p>" not in row["description_text"]
+        assert "&lt;" not in row["description_text"]
+
+
+def test_usajobs_timestamps_with_four_digit_fractional_seconds():
+    """Live PublicationStartDate looks like "2026-02-06T00:00:00.0000"."""
+    assert sources._iso("2026-02-06T00:00:00.0000").startswith("2026-02-06")
+    assert sources._iso("2026-02-06T00:00:00.0000000").startswith("2026-02-06")
 
 
 def test_usajobs_headers_require_both_credentials(monkeypatch):

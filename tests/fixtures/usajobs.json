@@ -1,106 +1,450 @@
 {
-  "_note": "HAND-BUILT from the published USAJOBS Search API schema, not captured from a live response: the endpoint returns 401 without a real Authorization-Key. Re-capture this fixture the first time a key is available, and re-check the field names against what actually comes back.",
+  "_note": "CAPTURED LIVE from data.usajobs.gov on 2026-09-03 (JobCategoryCode=2210, Keyword=solutions|customer support, PayGradeLow=11). Descriptions truncated. Replaces the earlier hand-built fixture.",
   "SearchResult": {
     "SearchResultCount": 4,
     "SearchResultCountAll": 4,
     "SearchResultItems": [
       {
-        "MatchedObjectId": "830000100",
+        "_fixture_case": "remote/negotiable",
+        "MatchedObjectId": "DHA-26-AD-13051856-BU",
         "MatchedObjectDescriptor": {
-          "PositionID": "CISA-26-0001",
-          "PositionTitle": "IT Specialist (Customer Support)",
-          "PositionURI": "https://www.usajobs.gov/job/830000100",
-          "ApplyURI": ["https://www.usajobs.gov/job/830000100/apply"],
-          "PositionLocationDisplay": "Anywhere in the U.S. (remote job)",
-          "PositionLocation": [
-            {"LocationName": "Anywhere in the U.S. (remote job)", "CountryCode": "United States"}
+          "PositionID": "DHA-26-AD-13051856-BU",
+          "PositionTitle": "IT Specialist",
+          "PositionURI": "https://www.usajobs.gov:443/job/883416000",
+          "ApplyURI": [
+            "https://www.usajobs.gov:443/job/883416000"
           ],
-          "OrganizationName": "Cybersecurity and Infrastructure Security Agency",
-          "DepartmentName": "Department of Homeland Security",
-          "JobCategory": [{"Name": "Information Technology Management", "Code": "2210"}],
-          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
-          "PositionOfferingType": [{"Name": "Permanent", "Code": "15317"}],
-          "QualificationSummary": "Experience troubleshooting enterprise software for end users.",
-          "PositionRemuneration": [
-            {"MinimumRange": "103409.0", "MaximumRange": "134435.0", "RateIntervalCode": "PA", "Description": "Per Year"}
-          ],
-          "PublicationStartDate": "2026-09-01",
-          "ApplicationCloseDate": "2026-09-20",
-          "UserArea": {
-            "Details": {
-              "JobSummary": "<p>Provide tier 2 customer support for agency-wide systems.</p>",
-              "Requirements": "US citizenship required.",
-              "WhoMayApply": {"Name": "United States Citizens", "Code": ""},
-              "RemoteIndicator": true
-            }
-          }
-        }
-      },
-      {
-        "MatchedObjectId": "830000200",
-        "MatchedObjectDescriptor": {
-          "PositionID": "VA-26-0002",
-          "PositionTitle": "IT Specialist (Applications Software)",
-          "PositionURI": "https://www.usajobs.gov/job/830000200",
-          "ApplyURI": ["https://www.usajobs.gov/job/830000200/apply"],
           "PositionLocationDisplay": "Location Negotiable After Selection",
-          "OrganizationName": "Veterans Health Administration",
-          "DepartmentName": "Department of Veterans Affairs",
-          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
-          "QualificationSummary": "Experience with application integration.",
-          "PositionRemuneration": [
-            {"MinimumRange": "86962.0", "MaximumRange": "167000.0", "RateIntervalCode": "PA", "Description": "Per Year"}
-          ],
-          "PublicationStartDate": "2026-08-28",
-          "UserArea": {
-            "Details": {
-              "JobSummary": "Support and integrate clinical applications.",
-              "WhoMayApply": {"Name": "Current federal employees only", "Code": ""}
-            }
-          }
-        }
-      },
-      {
-        "MatchedObjectId": "830000300",
-        "MatchedObjectDescriptor": {
-          "PositionID": "GSA-26-0003",
-          "PositionTitle": "IT Specialist (Solutions Engineer)",
-          "PositionURI": "https://www.usajobs.gov/job/830000300",
-          "PositionLocationDisplay": "Washington, District of Columbia",
-          "OrganizationName": "General Services Administration",
-          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
-          "QualificationSummary": "Cloud solutions delivery.",
-          "PositionRemuneration": [
-            {"MinimumRange": "45.50", "MaximumRange": "60.00", "RateIntervalCode": "PH", "Description": "Per Hour"}
-          ],
-          "PublicationStartDate": "2026-08-15",
-          "UserArea": {
-            "Details": {
-              "JobSummary": "Deliver cloud solutions to agency partners.",
-              "WhoMayApply": {"Name": "United States Citizens", "Code": ""},
-              "RemoteIndicator": false
-            }
-          }
-        }
-      },
-      {
-        "MatchedObjectId": "830000400",
-        "MatchedObjectDescriptor": {
-          "PositionID": "DOI-26-0004",
-          "PositionTitle": "Supervisory IT Specialist (Customer Support)",
-          "PositionURI": "https://www.usajobs.gov/job/830000400",
           "PositionLocation": [
-            {"LocationName": "Denver, Colorado", "CityName": "Denver", "StateCode": "CO"}
+            {
+              "LocationName": "Phoenix, Arizona",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Arizona",
+              "CityName": "Phoenix, Arizona",
+              "Longitude": -112.075775,
+              "Latitude": 33.44826
+            },
+            {
+              "LocationName": "Los Angeles, California",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "California",
+              "CityName": "Los Angeles, California",
+              "Longitude": -118.245,
+              "Latitude": 34.0535
+            },
+            {
+              "LocationName": "San Francisco, California",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "California",
+              "CityName": "San Francisco, California",
+              "Longitude": -122.4196,
+              "Latitude": 37.7771
+            },
+            {
+              "LocationName": "Denver, Colorado",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Colorado",
+              "CityName": "Denver, Colorado",
+              "Longitude": -104.992256,
+              "Latitude": 39.74001
+            },
+            {
+              "LocationName": "Washington, District of Columbia",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "District of Columbia",
+              "CityName": "Washington, District of Columbia",
+              "Longitude": -77.032,
+              "Latitude": 38.8904
+            },
+            {
+              "LocationName": "Miami, Florida",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Florida",
+              "CityName": "Miami, Florida",
+              "Longitude": -80.23742,
+              "Latitude": 25.728985
+            },
+            {
+              "LocationName": "Atlanta, Georgia",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Georgia",
+              "CityName": "Atlanta, Georgia",
+              "Longitude": -84.39111,
+              "Latitude": 33.748314
+            },
+            {
+              "LocationName": "Chicago, Illinois",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Illinois",
+              "CityName": "Chicago, Illinois",
+              "Longitude": -87.63241,
+              "Latitude": 41.88415
+            },
+            {
+              "LocationName": "Indianapolis, Indiana",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Indiana",
+              "CityName": "Indianapolis, Indiana",
+              "Longitude": -86.14996,
+              "Latitude": 39.76691
+            },
+            {
+              "LocationName": "New Orleans, Louisiana",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Louisiana",
+              "CityName": "New Orleans, Louisiana",
+              "Longitude": -90.07771,
+              "Latitude": 29.95369
+            },
+            {
+              "LocationName": "Boston, Massachusetts",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Massachusetts",
+              "CityName": "Boston, Massachusetts",
+              "Longitude": -71.0567,
+              "Latitude": 42.358635
+            },
+            {
+              "LocationName": "Minneapolis, Minnesota",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Minnesota",
+              "CityName": "Minneapolis, Minnesota",
+              "Longitude": -93.26493,
+              "Latitude": 44.979034
+            },
+            {
+              "LocationName": "Kansas City, Missouri",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Missouri",
+              "CityName": "Kansas City, Missouri",
+              "Longitude": -94.58306,
+              "Latitude": 39.10296
+            },
+            {
+              "LocationName": "Albuquerque, New Mexico",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "New Mexico",
+              "CityName": "Albuquerque, New Mexico",
+              "Longitude": -106.649,
+              "Latitude": 35.0842
+            },
+            {
+              "LocationName": "New York, New York",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "New York",
+              "CityName": "New York, New York",
+              "Longitude": -74.0071,
+              "Latitude": 40.7146
+            },
+            {
+              "LocationName": "Oklahoma City, Oklahoma",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Oklahoma",
+              "CityName": "Oklahoma City, Oklahoma",
+              "Longitude": -97.52033,
+              "Latitude": 35.472004
+            },
+            {
+              "LocationName": "Portland, Oregon",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Oregon",
+              "CityName": "Portland, Oregon",
+              "Longitude": -122.67563,
+              "Latitude": 45.511795
+            },
+            {
+              "LocationName": "Austin, Texas",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Texas",
+              "CityName": "Austin, Texas",
+              "Longitude": -97.743,
+              "Latitude": 30.2676
+            },
+            {
+              "LocationName": "Salt Lake City, Utah",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Utah",
+              "CityName": "Salt Lake City, Utah",
+              "Longitude": -111.88823,
+              "Latitude": 40.75952
+            },
+            {
+              "LocationName": "Seattle, Washington",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Washington",
+              "CityName": "Seattle, Washington",
+              "Longitude": -122.32945,
+              "Latitude": 47.60358
+            }
           ],
-          "OrganizationName": "Bureau of Land Management",
-          "PositionSchedule": [{"Name": "Full-time", "Code": "1"}],
-          "QualificationSummary": "Lead a customer support team.",
-          "PublicationStartDate": "2026-08-10",
+          "OrganizationName": "Deputy Assistant Secretary for Information and Technology",
+          "DepartmentName": "Department of Veterans Affairs",
+          "JobCategory": [
+            {
+              "Name": "Information Technology Management",
+              "Code": "2210"
+            }
+          ],
+          "PositionSchedule": [
+            {
+              "Name": "",
+              "Code": "1"
+            }
+          ],
+          "PositionOfferingType": [
+            {
+              "Name": "",
+              "Code": "15317"
+            }
+          ],
+          "PositionRemuneration": [
+            {
+              "MinimumRange": "63795",
+              "MaximumRange": "99404",
+              "RateIntervalCode": "PA",
+              "Description": "Per Year"
+            }
+          ],
+          "PublicationStartDate": "2026-09-03T10:56:43.8770",
+          "PositionStartDate": "2026-09-03T10:56:43.8770",
+          "QualificationSummary": "To qualify for this position, applicants must meet all requirements by the closing date of this announcement, 09/14/2026. You may qualify based on your experience and/or education as described below: ",
           "UserArea": {
             "Details": {
-              "JobSummary": "Announcement is internal to agency.",
-              "WhoMayApply": {"Name": "Internal to agency", "Code": ""},
-              "RemoteIndicator": "false"
+              "JobSummary": "Deliver secure and high availability infrastructure solutions supporting VA's mission. Serve as an operational service provider of foundational compute, storage, physical database, and client management components. Implement and sustain technical, management, and operational security controls and supporting processes to protect mission critical networks, systems, and applications throughout the VA",
+              "Requirements": "You must be a U.S. Citizen to apply for this job To be considered for this position, you must complete all required steps in the process. In addition to the application and questionnaire, this positio",
+              "WhoMayApply": {
+                "Name": "",
+                "Code": ""
+              },
+              "RemoteIndicator": false,
+              "HiringPathDisplay": [
+                "Open to the public"
+              ],
+              "SecurityClearance": "Not Required"
+            }
+          }
+        }
+      },
+      {
+        "_fixture_case": "not-open",
+        "MatchedObjectId": "26-215-TM",
+        "MatchedObjectDescriptor": {
+          "PositionID": "26-215-TM",
+          "PositionTitle": "IT Specialist (Senior IT Solutions Architect)",
+          "PositionURI": "https://www.usajobs.gov:443/job/883338200",
+          "ApplyURI": [
+            "https://www.usajobs.gov:443/job/883338200"
+          ],
+          "PositionLocationDisplay": "Washington, District of Columbia",
+          "PositionLocation": [
+            {
+              "LocationName": "Washington, District of Columbia",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "District of Columbia",
+              "CityName": "Washington, District of Columbia",
+              "Longitude": -77.032,
+              "Latitude": 38.8904
+            }
+          ],
+          "OrganizationName": "Small Business Administration",
+          "DepartmentName": "Other Agencies and Independent Organizations",
+          "JobCategory": [
+            {
+              "Name": "Information Technology Management",
+              "Code": "2210"
+            }
+          ],
+          "PositionSchedule": [
+            {
+              "Name": "",
+              "Code": "1"
+            }
+          ],
+          "PositionOfferingType": [
+            {
+              "Name": "",
+              "Code": "15317"
+            }
+          ],
+          "PositionRemuneration": [
+            {
+              "MinimumRange": "143913",
+              "MaximumRange": "187093",
+              "RateIntervalCode": "PA",
+              "Description": "Per Year"
+            }
+          ],
+          "PublicationStartDate": "2026-09-03T00:00:00.0000",
+          "PositionStartDate": "2026-09-03T00:00:00.0000",
+          "QualificationSummary": "MINIMUM QUALICATIONS: To be considered minimally qualified for this position, you must show that you have the required IT-related experience for the grade level to which your are applying: GS-14, Requ",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "This position is located in the Small Business Administration, Office of the Chief Information Officer in Washington, D.C. The incumbent serves as a Senior IT Solutions Architect within the OCIO Program Solutions, Architecture, and Engineering Division (PSAED) and is a senior technical expert for enterprise solutions architecture, network and systems engineering, and cloud-native modernization acr",
+              "Requirements": "",
+              "WhoMayApply": {
+                "Name": "",
+                "Code": ""
+              },
+              "RemoteIndicator": false,
+              "HiringPathDisplay": [
+                "Career transition (CTAP, ICTAP, RPL)",
+                "Family of overseas employees",
+                "Competitive service",
+                "Individuals with disabilities",
+                "Land and base management",
+                "Military spouses",
+                "Peace Corps & AmeriCorps Vista",
+                "Veterans"
+              ],
+              "SecurityClearance": "Not Required"
+            }
+          }
+        }
+      },
+      {
+        "_fixture_case": "clearance",
+        "MatchedObjectId": "FSIS-26-MDH-13049842-DW",
+        "MatchedObjectDescriptor": {
+          "PositionID": "FSIS-26-MDH-13049842-DW",
+          "PositionTitle": "IT Specialist (APPSW)",
+          "PositionURI": "https://www.usajobs.gov:443/job/883538500",
+          "ApplyURI": [
+            "https://www.usajobs.gov:443/job/883538500"
+          ],
+          "PositionLocationDisplay": "Multiple Locations",
+          "PositionLocation": [
+            {
+              "LocationName": "Fort Collins, Colorado",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Colorado",
+              "CityName": "Fort Collins, Colorado",
+              "Longitude": -105.07626,
+              "Latitude": 40.581505
+            },
+            {
+              "LocationName": "Urbandale, Iowa",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Iowa",
+              "CityName": "Urbandale, Iowa",
+              "Longitude": -93.71243,
+              "Latitude": 41.625057
+            }
+          ],
+          "OrganizationName": "Food Safety and Inspection Service",
+          "DepartmentName": "Department of Agriculture",
+          "JobCategory": [
+            {
+              "Name": "Information Technology Management",
+              "Code": "2210"
+            }
+          ],
+          "PositionSchedule": [
+            {
+              "Name": "",
+              "Code": "1"
+            }
+          ],
+          "PositionOfferingType": [
+            {
+              "Name": "",
+              "Code": "15317"
+            }
+          ],
+          "PositionRemuneration": [
+            {
+              "MinimumRange": "126797",
+              "MaximumRange": "182316",
+              "RateIntervalCode": "PA",
+              "Description": "Per Year"
+            }
+          ],
+          "PublicationStartDate": "2026-09-04T00:00:00.0000",
+          "PositionStartDate": "2026-09-04T00:00:00.0000",
+          "QualificationSummary": "Applicants must meet all qualifications and eligibility requirements by the closing date of the announcement including specialized experience and/or education, as defined below. For the GS-14 level: A",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "This position located in the Office of the Administrator (OA), Office of the Chief Information Officer (OCIO), Business Solutions Center (BSC). OCIO provides information technology (IT) planning, design, application development, systems administration, telecommunications, information assurance/security, information management, and IT customer support services for FSIS.",
+              "Requirements": "",
+              "WhoMayApply": {
+                "Name": "",
+                "Code": ""
+              },
+              "RemoteIndicator": false,
+              "HiringPathDisplay": [
+                "Career transition (CTAP, ICTAP, RPL)",
+                "Open to the public"
+              ],
+              "SecurityClearance": "Other"
+            }
+          }
+        }
+      },
+      {
+        "_fixture_case": "hourly-or-plain",
+        "MatchedObjectId": "SSA12879364-26-DHA-CIO",
+        "MatchedObjectDescriptor": {
+          "PositionID": "SSA12879364-26-DHA-CIO",
+          "PositionTitle": "Solutions Architect",
+          "PositionURI": "https://www.usajobs.gov:443/job/856787000",
+          "ApplyURI": [
+            "https://www.usajobs.gov:443/job/856787000"
+          ],
+          "PositionLocationDisplay": "Woodlawn, Maryland",
+          "PositionLocation": [
+            {
+              "LocationName": "Woodlawn, Maryland",
+              "CountryCode": "United States",
+              "CountrySubDivisionCode": "Maryland",
+              "CityName": "Woodlawn, Maryland",
+              "Longitude": -76.7374,
+              "Latitude": 39.317
+            }
+          ],
+          "OrganizationName": "Social Security Administration",
+          "DepartmentName": "Other Agencies and Independent Organizations",
+          "JobCategory": [
+            {
+              "Name": "Information Technology Management",
+              "Code": "2210"
+            }
+          ],
+          "PositionSchedule": [
+            {
+              "Name": "- Flex Time and Alternate Work Schedules available",
+              "Code": "1"
+            }
+          ],
+          "PositionOfferingType": [
+            {
+              "Name": "",
+              "Code": "15317"
+            }
+          ],
+          "PositionRemuneration": [
+            {
+              "MinimumRange": "143913",
+              "MaximumRange": "197200",
+              "RateIntervalCode": "PA",
+              "Description": "Per Year"
+            }
+          ],
+          "PublicationStartDate": "2026-02-06T00:00:00.0000",
+          "PositionStartDate": "2026-02-06T00:00:00.0000",
+          "QualificationSummary": "Resumes exceeding two pages in length will not be considered. Please visit the new resume guidance for more information. READ ALL SECTIONS OF THIS ANNOUNCEMENT IN ITS ENTIRETY. THIS INFORMATION IS CRU",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "IT Specialist (APPSW) Solutions Architect positions are being filled through the Office of Personnel Management's delegated Direct Hire Authority, open to all U.S. citizens. Selections made under this bulletin will be processed as new appointments to the civil service. Current civil service employees would, therefore, be given new appointments to the civil service. Under the provisions of the Dire",
+              "Requirements": "",
+              "WhoMayApply": {
+                "Name": "",
+                "Code": ""
+              },
+              "RemoteIndicator": false,
+              "HiringPathDisplay": [
+                "Career transition (CTAP, ICTAP, RPL)",
+                "Open to the public"
+              ],
+              "SecurityClearance": "Not Required"
             }
           }
         }
