@@ -255,3 +255,48 @@ When a key exists (free, https://developer.usajobs.gov):
      whether PositionLocationDisplay is present.
 Everything else is working: 178 tests, db holds the current private-sector
 matches, daily workflow is "run jobwatch and send me the digest".
+
+## 2026-09-03 — Workday source
+
+30. Workday source type. companies.yaml slug is the composite tenant/wdNN/site.
+    Discovered from each company's public careers redirect:
+      Booz Allen Hamilton  bah/wd1/BAH_Jobs                  verified, 2000 jobs
+      Accenture            accenture/wd103/AccentureCareers  verified, 2000 jobs
+    AFS has no separate public board (afs.accenture.com does not resolve).
+31. "Partner / consulting" digest section (markdown + HTML) for source=workday.
+32. config VALID_ATS gained "workday"; verify.py probes it with a POST and skips
+    name-derived slug variants (a composite slug has no meaningful variants).
+33. 193 tests passing. Workday fixtures are captured LIVE (unlike USAJOBS).
+
+### Verified against the live API, not assumed
+- limit caps at 20; 50 and 100 both return zero rows. offset pages correctly.
+- searchText is a loose stemmed OR match, NOT a phrase filter. "Claude" -> 977
+  hits led by "Cloud Engineer"; "solutions engineer" -> 1053. "Anthropic" -> 2 is
+  the only precise one. The searches widen the net; title rules do the filtering.
+- The list response has no description. Only rows whose title already matches the
+  include list get the extra per-posting detail request.
+
+### Slalom and Deloitte: skipped, with evidence
+Neither is Workday; both are Avature, and neither has a searchable listing that
+plain requests can use. Recorded unverified in companies.yaml with the reason.
+  slalom.wd1/wd3/wd5           -> 401 / 422 / 422
+  jobs.slalom.com/wday/cxs/... -> 404 HTML (not a Workday custom domain)
+  Avature SearchJobs/feed/     -> 200 but a fixed 20 rows
+  keywords|keyword|q|searchText|jobKeyword|searchKeyword|3_66_3|freeText -> all ignored
+  jobRecordsPerPage=100/200, jobOffset=20 -> ignored, same 20 rows
+  Deloitte SearchJobs HTML ?keywords= -> same 10 jobs
+  Slalom SearchJobs HTML       -> 0 job links, JS-rendered
+No browser dependency added, per the brief.
+
+### Also fixed
+The empty-digest message said "0 matched the filters" when 18 HAD matched and
+were all dropped by the US-remote filter. It now reports each stage separately.
+
+## STOP POINT — 2026-09-03 (Workday)
+Expect the Partner / consulting section to be EMPTY on most default runs. Both
+tenants return matching titles (18 on the first live run) but zero survive
+--us-remote, because consulting roles are tied to duty stations (McLean,
+Arlington, Fort Sam Houston, Hyderabad, Manila, London). Use --no-us-remote to
+see them: 16 matches, 10 carrying clearance flags.
+Still outstanding from before: no USAJOBS key, so that source has never run live
+and its fixture is hand-built.
