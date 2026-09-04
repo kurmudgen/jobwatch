@@ -340,3 +340,39 @@ Only remaining known gap: Slalom + Deloitte (Avature) still skipped - no
 searchable listing without a browser.
 Daily: "run jobwatch and send me the digest" (connector; attach the HTML file,
 never put URLs in the body).
+
+## 2026-09-04 — application triage + applied tracking
+
+37. `jobwatch.py forms` — Greenhouse publishes the whole application form at
+    /v1/boards/{slug}/jobs/{id}?questions=true. Ranks matches by effort
+    (required fields + 3x job-specific + 5x written), easiest first, and lists
+    every job-specific question with a repeat count so recurring ones get
+    answered once.
+    Board slug comes from companies.yaml, NOT the url: Stripe and Datadog serve
+    their Greenhouse boards from stripe.com and careers.datadoghq.com, so url
+    parsing left 6 of 19 unresolved.
+    Only Greenhouse exposes forms; ashby/lever/workday are listed as "form not
+    readable" rather than silently dropped.
+38. `jobwatch.py applied --url` / --list / --undo / --include-applied. Applied
+    postings drop out of list and forms. Additive migration, 52 rows preserved.
+39. 235 tests passing.
+
+### Not built, and why
+Auto-submission. Greenhouse's application POST needs the employer's board API
+key (Basic auth), which an applicant does not have, so it is not available even
+in principle. Browser autofill would need Playwright, which Jacob ruled out.
+
+### Effort spread on the current 19 Greenhouse matches
+PlanetScale Solutions Engineer      4 required, 0 job-specific   <- start here
+PlanetScale Enterprise Support      4 required, 1 written
+Chainguard (x2)                     8-10 required, 3 job-specific
+Datadog (x6)                        11-12 required, 5-6 job-specific
+Grafana Labs (x3)                   13 required, incl. 2 long-form
+Stripe (x3)                         ~14 required, 9 job-specific
+Twilio                              12 required
+Vannevar Labs                       12 required, incl. TS clearance questions
+
+## STOP POINT — 2026-09-04
+Nothing blocked. Next obvious step if wanted: an answers file (answers.yaml)
+holding the standard responses, so `forms` prints the exact answer next to each
+question instead of just the question.
