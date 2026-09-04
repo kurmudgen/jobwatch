@@ -15,6 +15,7 @@ import sys
 import config
 import digest
 import filters
+import forms
 import sources
 import store
 import verify as verify_mod
@@ -105,7 +106,8 @@ def cmd_list(args) -> int:
     finally:
         conn.close()
     if not args.include_closed:
-        rows = filters.filter_open(rows)
+        rows = [r for r in rows if not r.get("applied_at")]
+    rows = filters.filter_open(rows)
     if args.us_remote:
         rows = filters.filter_us_remote(rows)
     rows = filters.dedupe(rows)
@@ -118,6 +120,56 @@ def cmd_list(args) -> int:
         empty_note="Nothing recorded in that window.",
         by_tier=args.tier,
     ))
+    return 0
+
+
+def cmd_applied(args) -> int:
+    """Mark an application as sent so it stops showing up."""
+    config.setup_logging(args.verbose)
+    conn = store.connect()
+    try:
+        if args.list:
+            rows = store.applied(conn)
+            if not rows:
+                print("Nothing marked applied yet.")
+                return 0
+            print(str(len(rows)) + " applied:")
+            for row in rows:
+                print("  " + (row.get("applied_at") or "")[:10] + "  "
+                      + (row.get("company") or "") + " - " + (row.get("title") or ""))
+                print("      " + (row.get("url") or ""))
+            return 0
+        if not args.url:
+            print("Give a --url, or --list to see what is marked.", file=sys.stderr)
+            return 1
+        action = store.unmark_applied if args.undo else store.mark_applied
+        if action(conn, args.url):
+            print(("Unmarked " if args.undo else "Marked applied: ") + args.url)
+            return 0
+        print("No stored posting with that url. Run `jobwatch.py list` to see "
+              "the exact urls.", file=sys.stderr)
+        return 1
+    finally:
+        conn.close()
+
+
+def cmd_forms(args) -> int:
+    """How much work is each application, easiest first."""
+    config.setup_logging(args.verbose)
+    conn = store.connect()
+    try:
+        rows = store.recent(conn, days=args.days)
+    finally:
+        conn.close()
+    rows = [r for r in rows if not r.get("applied_at")]
+    rows = filters.filter_open(rows)
+    if args.us_remote:
+        rows = filters.filter_us_remote(rows)
+    rows = filters.dedupe(rows)
+    if args.only_tier:
+        rows = [r for r in rows
+                if filters.compute_tier(r.get("title") or "") == args.only_tier]
+    print(forms.render(forms.collect_forms(rows, config.load_companies())))
     return 0
 
 
@@ -245,6 +297,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--html", action="store_true", help="emit the digest as HTML"
     )
     listing.add_argument(
+        "--include-applied",
+        action="store_true",
+        help="show postings already marked applied (default: hide)",
+    )
+    listing.add_argument(
         "--include-closed",
         action="store_true",
         help="keep postings whose application deadline has passed (default: drop)",
@@ -256,6 +313,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="keep only US-remote postings (default: on; --no-us-remote disables)",
     )
     listing.set_defaults(func=cmd_list)
+
+    done = sub.add_parser("applied", help="mark a posting as applied to")
+    done.add_argument("--url", help="the posting url, exactly as the digest shows it")
+    done.add_argument("--list", action="store_true", help="show what is marked")
+    done.add_argument("--undo", action="store_true", help="unmark it")
+    done.set_defaults(func=cmd_applied)
+
+    triage = sub.add_parser(
+        "forms", help="read each Greenhouse application form and rank by effort")
+    triage.add_argument("--days", type=int, default=30, help="lookback window (default 30)")
+    triage.add_argument("--only-tier", type=int, choices=(1, 2, 3))
+    triage.add_argument(
+        "--us-remote", action=argparse.BooleanOptionalAction, default=True,
+        help="keep only US-remote postings (default: on)",
+    )
+    triage.set_defaults(func=cmd_forms)
 
     add = sub.add_parser("add", help="append a company to companies.yaml")
     add.add_argument("--name", required=True)

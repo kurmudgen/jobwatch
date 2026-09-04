@@ -23,6 +23,9 @@ python jobwatch.py run --email          # ... and send it over SMTP
 python jobwatch.py list --days 7        # matches first seen in the last week
 python jobwatch.py list --days 7 --tier         # ... grouped by tier
 python jobwatch.py list --days 7 --only-tier 1  # ... tier 1 only
+python jobwatch.py forms --days 30        # read each Greenhouse application form
+python jobwatch.py applied --url <url>    # mark one applied so it stops appearing
+python jobwatch.py applied --list
 python jobwatch.py add --name Foo --ats greenhouse --slug foo
 python jobwatch.py verify               # re-check every slug in companies.yaml
 ```
@@ -336,6 +339,36 @@ its deadline is dropped. `--include-closed` keeps them. A posting with no
 published deadline is treated as open, which is every source except USAJOBS. The
 deadline is refreshed on postings already stored, so an extended announcement
 comes back rather than staying filtered out.
+
+## Application triage
+
+`python jobwatch.py forms` answers "how much work is each of these" before you
+open a single tab. Greenhouse publishes the whole application form on its public
+board API (`/v1/boards/{slug}/jobs/{id}?questions=true`), so each match is
+ranked by effort — required fields, job-specific questions, and written answers
+weighted hardest — easiest first.
+
+The board slug comes from `companies.yaml`, not the URL: Stripe and Datadog
+serve their Greenhouse boards from `stripe.com` and `careers.datadoghq.com`, so
+the slug never appears in the link.
+
+It also prints every job-specific question with a count, so the ones that repeat
+get answered once instead of per application. On the current set that is work
+authorization, sponsorship, city/state, "how did you hear about us", current
+employer and title — the same handful across nine boards.
+
+Only Greenhouse exposes this. Ashby, Lever and Workday do not publish their
+forms, and those postings are listed separately as "form not readable".
+
+**Nothing here submits an application.** Greenhouse's application POST needs the
+employer's board key, which an applicant does not have, and mass auto-submission
+is against most boards' terms. This is triage and preparation.
+
+## Applied tracking
+
+`python jobwatch.py applied --url <url>` records that an application went in.
+Applied postings are hidden from `list` and from `forms`; `--include-applied`
+shows them, `--undo` reverses it, and `--list` shows everything marked.
 
 ## Storage
 

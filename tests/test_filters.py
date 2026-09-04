@@ -786,3 +786,127 @@ def test_the_digest_shows_the_deadline():
     rows = [federal(closes_at="2026-09-30T00:00:00+00:00")]
     assert "closes 2026-09-30" in digest.render(rows)
     assert "closes 2026-09-30" in digest.render_html(rows)
+
+
+# --- application triage ----------------------------------------------------
+
+def gh(**kwargs):
+    base = dict(posting(source="greenhouse", company="PlanetScale",
+                        title="Solutions Engineer",
+                        url="https://job-boards.greenhouse.io/planetscale/jobs/4052805009"))
+    base.update(kwargs)
+    return base
+
+
+@pytest.mark.parametrize("url,expected", [
+    ("https://job-boards.greenhouse.io/planetscale/jobs/4052805009", "4052805009"),
+    ("https://stripe.com/jobs/search?gh_jid=7377101", "7377101"),
+    ("https://careers.datadoghq.com/detail/8139662/?gh_jid=8139662", "8139662"),
+    ("https://example.com/no-id-here", None),
+])
+def test_job_id_extraction(url, expected):
+    import forms
+    assert forms.job_id_from_url(url) == expected
+
+
+def test_slug_comes_from_companies_not_the_url():
+    """Stripe and Datadog serve their Greenhouse boards from their own domains,
+    so the slug never appears in the posting url."""
+    import forms
+    companies = [
+        {"name": "Stripe", "ats": "greenhouse", "slug": "stripe"},
+        {"name": "Supabase", "ats": "ashby", "slug": "supabase"},
+    ]
+    assert forms.slug_for("Stripe", companies) == "stripe"
+    assert forms.slug_for("stripe", companies) == "stripe"
+    # An Ashby company must not resolve to a Greenhouse slug.
+    assert forms.slug_for("Supabase", companies) is None
+    assert forms.slug_for("Unknown Co", companies) is None
+
+
+def test_summarize_separates_boilerplate_from_real_questions():
+    import forms
+    payload = {"questions": [
+        {"label": "First Name", "required": True, "fields": [{"type": "input_text"}]},
+        {"label": "Email", "required": True, "fields": [{"type": "input_text"}]},
+        {"label": "Resume/CV", "required": True,
+         "fields": [{"type": "input_file"}, {"type": "textarea"}]},
+        {"label": "Are you located in the Bay Area?", "required": True,
+         "fields": [{"type": "input_text"}]},
+        {"label": "Why this role?", "required": False, "fields": [{"type": "textarea"}]},
+    ]}
+    summary = forms.summarize(payload)
+    assert summary["required"] == 4
+    assert summary["specific"] == ["Are you located in the Bay Area?"]
+    # Resume/CV has a textarea but is not a written answer to compose.
+    assert "Resume/CV" not in summary["essays"]
+    assert "Why this role?" in summary["essays"]
+
+
+def test_effort_orders_easy_forms_first():
+    import forms
+    easy = {"required": 4, "specific": [], "essays": []}
+    medium = {"required": 8, "specific": ["a", "b"], "essays": []}
+    hard = {"required": 8, "specific": ["a"], "essays": ["essay"]}
+    assert forms.effort(easy) < forms.effort(medium) < forms.effort(hard)
+    assert forms.effort(None) > forms.effort(hard)
+
+
+def test_non_greenhouse_postings_are_reported_not_fetched():
+    import forms
+    rows = forms.collect_forms([posting(source="ashby", url="https://x/1")], [])
+    assert rows[0]["form"] is None
+    assert rows[0]["form_note"] == "not greenhouse"
+
+
+def test_render_lists_repeated_questions_once_with_a_count():
+    import forms
+    rows = [
+        gh(url="https://x/1", form={"total": 5, "required": 5, "specific": ["Work auth?"],
+                                    "essays": [], "demographic": False, "deadline": None},
+           form_note=""),
+        gh(url="https://x/2", form={"total": 5, "required": 5, "specific": ["Work auth?"],
+                                    "essays": [], "demographic": False, "deadline": None},
+           form_note=""),
+    ]
+    out = forms.render(rows)
+    assert "questions worth answering once" in out
+    assert "(2x) Work auth?" in out
+
+
+# --- applied tracking ------------------------------------------------------
+
+def test_marking_applied_round_trips(tmp_path):
+    import store
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [posting(url="https://x/1")])
+        assert store.mark_applied(conn, "https://x/1") is True
+        rows = store.applied(conn)
+        assert len(rows) == 1 and rows[0]["url"] == "https://x/1"
+        assert store.unmark_applied(conn, "https://x/1") is True
+        assert store.applied(conn) == []
+    finally:
+        conn.close()
+
+
+def test_marking_an_unknown_url_reports_failure(tmp_path):
+    import store
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        assert store.mark_applied(conn, "https://not-stored/1") is False
+    finally:
+        conn.close()
+
+
+def test_applied_postings_are_hidden_from_recent(tmp_path):
+    import store
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [posting(url="https://x/1"), posting(url="https://x/2")])
+        store.mark_applied(conn, "https://x/1")
+        rows = store.recent(conn, days=1)
+        visible = [r for r in rows if not r.get("applied_at")]
+        assert [r["url"] for r in visible] == ["https://x/2"]
+    finally:
+        conn.close()

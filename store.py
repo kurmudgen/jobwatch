@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS postings (
     salary_min       REAL,
     salary_max       REAL,
     closes_at        TEXT,
+    applied_at       TEXT,
     first_seen       TEXT NOT NULL,
     last_seen        TEXT NOT NULL,
     seen_count       INTEGER NOT NULL DEFAULT 1
@@ -44,6 +45,7 @@ LATER_COLUMNS = (
     ("salary_min", "REAL"),
     ("salary_max", "REAL"),
     ("closes_at", "TEXT"),
+    ("applied_at", "TEXT"),
 )
 
 
@@ -156,6 +158,30 @@ def recent(conn: sqlite3.Connection, days: int = 7) -> "list[dict]":
         "SELECT * FROM postings WHERE first_seen >= ? "
         "ORDER BY company COLLATE NOCASE, first_seen DESC",
         (cutoff,),
+    ).fetchall()
+    return [_row_to_dict(r) for r in rows]
+
+
+def mark_applied(conn: sqlite3.Connection, url: str, when: "str | None" = None) -> bool:
+    """Record that an application went in. Returns False if the url is unknown."""
+    cursor = conn.execute(
+        "UPDATE postings SET applied_at = ? WHERE url = ?", (when or utcnow(), url)
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def unmark_applied(conn: sqlite3.Connection, url: str) -> bool:
+    cursor = conn.execute(
+        "UPDATE postings SET applied_at = NULL WHERE url = ?", (url,)
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def applied(conn: sqlite3.Connection) -> "list[dict]":
+    rows = conn.execute(
+        "SELECT * FROM postings WHERE applied_at IS NOT NULL ORDER BY applied_at DESC"
     ).fetchall()
     return [_row_to_dict(r) for r in rows]
 
