@@ -376,3 +376,34 @@ Vannevar Labs                       12 required, incl. TS clearance questions
 Nothing blocked. Next obvious step if wanted: an answers file (answers.yaml)
 holding the standard responses, so `forms` prints the exact answer next to each
 question instead of just the question.
+
+## 2026-09-04 (later) — answers.yaml
+
+40. answers.py + answers.example.yaml (committed, all-blank, test-enforced) and
+    answers.yaml (GITIGNORED - repo is public). `forms` prints the answer under
+    each question and reports coverage.
+    Phrase matching in file order. Order matters: "authorized to work without
+    requiring sponsorship" contains both trigger phrases, so the combined entry
+    must sit above the single-topic ones. Empty answer = unanswered.
+41. Jacob supplied three long-form answers; stored verbatim. Greenhouse
+    publishes NO max length on textarea fields, so no trimming was needed
+    (790 / 845 / 643 chars).
+42. Clearance entry split in two - "TS level or above" needs its own answer
+    above the general one, or "hold an active" swallows it.
+    ts_or_above = No, level = Secret (active). Derived from Jacob's own words.
+43. Coverage 19/44 -> 28/44 distinct questions. 244 tests passing.
+
+### Deliberately NOT auto-answered
+- Grafana "Why are you interested in a Solutions Engineer role?" (6x). Jacob's
+  background answer names the database platform, so it is PlanetScale-specific.
+  Sending it to Grafana would be wrong. Needs its own version.
+- Kubernetes/Observability experience (6x) - not covered by anything he wrote.
+- The four consent checkboxes - he should read them before agreeing.
+- Current/previous employer + job title (3x each) - trivial but his to state.
+
+## STOP POINT — 2026-09-04
+answers.yaml holds clearance and service details. It is gitignored and must stay
+that way; the public repo only ever gets answers.example.yaml.
+Next: PlanetScale Solutions Engineer is a 4-field form with every answer already
+in the profile block. PlanetScale Enterprise Support adds one written answer,
+which is now filled.
