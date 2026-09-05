@@ -63,6 +63,15 @@ timeout and one retry, and each source is wrapped in its own try/except, so a
 dead endpoint costs you that source and nothing else. Failures are listed at the
 bottom of the digest and written to `jobwatch.log`.
 
+**Greenhouse location:** the board splits location across two fields and they
+disagree. Verkada's "Enterprise Solutions Engineer, Northeast SLED" has
+`location: "Boston, MA United States"` but `offices: ["Massachusetts Remote",
+"New York Remote"]`, and Greenhouse's own job-seeker feed lists it as Remote.
+Reading `location` alone silently drops every genuinely remote role at a company
+that writes a city there — five Verkada roles, plus Anthropic, Okta and Rubrik
+postings. Office names are folded into the location string, skipping any already
+named in it.
+
 **HN thread selection:** the relevance-ranked Algolia `/search` endpoint returns
 20 arbitrary hits, the newest of which is currently a thread from 2020. jobwatch
 asks the date-sorted `/search_by_date` endpoint first (filtered to the
@@ -408,6 +417,11 @@ companies:
     slug: supabase
     status: verified  # verified | unverified | unchecked
 ```
+
+Greenhouse's own cross-board job feed at `my.greenhouse.io/jobs` is **not**
+usable as a source: it returns 401 without a signed-in session, and a session
+cookie is full account access. It is still useful for *discovery* — read it by
+hand, then `jobwatch.py add` the companies worth polling.
 
 `python jobwatch.py verify` probes every entry. If the seeded slug 404s it tries
 name-derived variants (lowercase, hyphenated, no spaces, suffix-stripped) and

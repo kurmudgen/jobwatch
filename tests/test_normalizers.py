@@ -407,3 +407,48 @@ def test_workday_detail_shape():
     text = html_to_text(info["jobDescription"])
     assert "<p>" not in text and "&lt;" not in text
     assert len(text) > 50
+
+
+def test_greenhouse_folds_offices_into_the_location():
+    """Greenhouse splits location across two fields and they disagree. Verkada's
+    Northeast SLED role has location "Boston, MA United States" but offices
+    ["Massachusetts Remote", "New York Remote"], and the board's own job-seeker
+    feed lists it as Remote. Reading location alone drops it."""
+    import filters
+    payload = {"jobs": [{
+        "title": "Enterprise Solutions Engineer, Northeast SLED",
+        "location": {"name": "Boston, MA United States"},
+        "offices": [{"name": "Massachusetts Remote"}, {"name": "New York Remote"}],
+        "absolute_url": "https://example.com/1",
+        "content": "",
+    }]}
+    row = sources.normalize_greenhouse(payload, "Verkada")[0]
+    assert "Massachusetts Remote" in row["location"]
+    assert "Boston, MA United States" in row["location"]
+    assert filters.is_us_remote(row["location"]) is True
+
+
+def test_greenhouse_does_not_repeat_an_office_already_in_the_location():
+    payload = {"jobs": [{
+        "title": "Support Engineer",
+        "location": {"name": "Remote - US"},
+        "offices": [{"name": "Remote - US"}],
+        "absolute_url": "https://example.com/2", "content": "",
+    }]}
+    assert sources.normalize_greenhouse(payload, "X")[0]["location"] == "Remote - US"
+
+
+def test_greenhouse_handles_missing_or_empty_offices():
+    for offices in ([], None, [{"name": ""}], [None]):
+        payload = {"jobs": [{"title": "Support Engineer",
+                             "location": {"name": "Austin, TX"},
+                             "offices": offices,
+                             "absolute_url": "https://example.com/3", "content": ""}]}
+        assert sources.normalize_greenhouse(payload, "X")[0]["location"] == "Austin, TX"
+
+
+def test_greenhouse_uses_offices_when_there_is_no_location():
+    payload = {"jobs": [{"title": "Support Engineer", "location": None,
+                         "offices": [{"name": "California Remote"}],
+                         "absolute_url": "https://example.com/4", "content": ""}]}
+    assert sources.normalize_greenhouse(payload, "X")[0]["location"] == "California Remote"

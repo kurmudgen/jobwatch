@@ -235,3 +235,63 @@ companies:
   note: Avature. SearchJobs/feed returns 20 rows and ignores keywords/keyword/q/searchText/jobKeyword/searchKeyword/3_66_3/freeText
     and both jobRecordsPerPage and jobOffset. HTML page ignores the keyword param too. No searchable listing
     without a browser, so skipped.
+- name: Verkada
+  ats: greenhouse
+  slug: verkada
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Rubrik
+  ats: greenhouse
+  slug: rubrik
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: New Relic
+  ats: greenhouse
+  slug: newrelic
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Motive
+  ats: greenhouse
+  slug: motive
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Commvault
+  ats: greenhouse
+  slug: commvault
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Upstart
+  ats: greenhouse
+  slug: upstart
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Mercury
+  ats: greenhouse
+  slug: mercury
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: DataGrail
+  ats: greenhouse
+  slug: datagrail
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Expel
+  ats: greenhouse
+  slug: expel
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Appian
+  ats: greenhouse
+  slug: appian
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Storable
+  ats: greenhouse
+  slug: storable
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: Engine
+  ats: greenhouse
+  slug: engine
+  status: verified
+  note: found via the Greenhouse cross-board feed, 2026-09-04

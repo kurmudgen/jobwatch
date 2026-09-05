@@ -109,10 +109,32 @@ def _posting(**kwargs) -> dict:
 GREENHOUSE_URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true"
 
 
+# Greenhouse splits location across two fields and they can disagree. Verkada's
+# "Enterprise Solutions Engineer, Northeast SLED" has location "Boston, MA
+# United States" but offices ["Massachusetts Remote", "New York Remote"] - the
+# board's own job-seeker feed lists it as Remote. Reading location alone drops
+# genuinely remote roles from any company that writes a city there.
+def _greenhouse_location(job: dict) -> str:
+    location = ((job.get("location") or {}).get("name")) or ""
+    offices = [
+        (office or {}).get("name") or ""
+        for office in job.get("offices") or []
+        if isinstance(office, dict)
+    ]
+    extra = [
+        name for name in dict.fromkeys(o.strip() for o in offices if o.strip())
+        if name.lower() not in location.lower()
+    ]
+    if not extra:
+        return location
+    joined = ", ".join(extra)
+    return (location + " (" + joined + ")").strip() if location else joined
+
+
 def normalize_greenhouse(payload: dict, company: str) -> "list[dict]":
     out = []
     for job in payload.get("jobs") or []:
-        location = ((job.get("location") or {}).get("name")) or ""
+        location = _greenhouse_location(job)
         description = html_to_text(job.get("content"))
         metadata = {
             (m.get("name") or "").lower(): m.get("value")
