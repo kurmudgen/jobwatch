@@ -12,7 +12,7 @@ COMPANIES_FILE = ROOT / "companies.yaml"
 DB_FILE = ROOT / "jobwatch.db"
 LOG_FILE = ROOT / "jobwatch.log"
 
-VALID_ATS = ("greenhouse", "lever", "ashby", "workday")
+VALID_ATS = ("greenhouse", "lever", "ashby", "workday", "eightfold")
 
 
 def setup_logging(verbose: bool = False) -> logging.Logger:

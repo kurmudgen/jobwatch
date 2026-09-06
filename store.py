@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS postings (
     salary_max       REAL,
     closes_at        TEXT,
     applied_at       TEXT,
+    lottery          INTEGER,
     first_seen       TEXT NOT NULL,
     last_seen        TEXT NOT NULL,
     seen_count       INTEGER NOT NULL DEFAULT 1
@@ -46,6 +47,7 @@ LATER_COLUMNS = (
     ("salary_max", "REAL"),
     ("closes_at", "TEXT"),
     ("applied_at", "TEXT"),
+    ("lottery", "INTEGER"),
 )
 
 
@@ -109,9 +111,9 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
         conn.execute(
             "INSERT INTO postings (url, source, company, title, location, remote, "
             "employment_type, posted_at, description_text, matched_keyword, "
-            "matched_in, flags, salary_min, salary_max, closes_at, "
+            "matched_in, flags, salary_min, salary_max, closes_at, lottery, "
             "first_seen, last_seen, seen_count) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
             (
                 url,
                 posting.get("source"),
@@ -128,6 +130,7 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
                 posting.get("salary_min"),
                 posting.get("salary_max"),
                 posting.get("closes_at"),
+                1 if posting.get("lottery") else 0,
                 now,
                 now,
             ),
@@ -147,6 +150,7 @@ def _row_to_dict(row: sqlite3.Row) -> dict:
     except (ValueError, TypeError):
         data["flags"] = []
     data["remote"] = bool(data.get("remote"))
+    data["lottery"] = bool(data.get("lottery"))
     return data
 
 

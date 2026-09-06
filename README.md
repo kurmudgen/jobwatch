@@ -54,6 +54,7 @@ Useful flags on `run`:
 | HN Who Is Hiring | Algolia search for the current thread, then its comments |
 | USAJOBS | `data.usajobs.gov/api/search` (needs a free key, see below) |
 | Workday | `POST {tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` |
+| Eightfold | `GET {host}/api/apply/v2/jobs?domain={domain}` (slug is `host/domain`) |
 
 Every posting is normalized to `source, company, title, location, remote,
 employment_type, url, posted_at, description_text, salary_min, salary_max`.
@@ -315,6 +316,32 @@ Reqs that share a company and title and differ only by location are collapsed to
 one, keeping the US/AMER copy. ElevenLabs posts the same Enterprise Solutions
 Engineer req once per country — 18 rows for one job. Applied after the US-remote
 filter on `run`, and on read for `list`. 35 rows down to 31.
+
+## Lottery
+
+Companies tagged `lottery: true` in `companies.yaml` are long shots worth an
+application on comp alone. Two things change for them:
+
+- **Scoped titles.** `software engineer ii`, `software engineer 2` and `swe ii`
+  count as matches, but *only* at a lottery company. The same title anywhere
+  else is ignored, and a plain "Software Engineer" is never a match.
+- **Their own digest section.** Tier 1 and tier 2 matches from lottery companies
+  are pulled into a **Lottery** section. A tier 3 match at a lottery company
+  stays in the ordinary listing, and every posting appears in exactly one
+  section so the totals do not double count.
+
+A lottery SWE title is deliberately tiered **2**, not 3 — the section only takes
+tiers 1 and 2, so at tier 3 the scoped titles would never have appeared.
+
+Ordering is salary max first, then newest. In practice it is date order:
+**Greenhouse publishes no pay at all** — zero populated pay fields across
+Databricks, Coinbase, Roblox, Pinterest and GitLab — so `salary_max` is empty
+for almost everything outside USAJOBS. "Lottery" is a curation judgment about
+which companies pay top of market, not a measured salary filter.
+
+The flag is stored on the posting, not just the company, because tier is derived
+at render time: a SWE title read back from SQLite without it recomputes as tier
+3 and silently drops out of the section.
 
 ## Tiers
 

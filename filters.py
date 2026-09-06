@@ -30,6 +30,15 @@ INCLUDE_TITLE_KEYWORDS = [
     "integration engineer",
     "onboarding engineer",
 ]
+# Extra titles accepted ONLY from companies tagged lottery: true. At a Databricks
+# or a Netflix the mid-level SWE ladder is worth a shot on comp alone; the same
+# title at a 20-person startup is not what this tool is for.
+LOTTERY_TITLE_KEYWORDS = [
+    "software engineer ii",
+    "software engineer 2",
+    "swe ii",
+]
+
 # Deliberately NOT included: "ai engineer" / "applied ai engineer". At these
 # companies those titles are senior ML research and modelling roles, not the
 # customer-facing engineering this list is for.
@@ -110,6 +119,7 @@ def _phrase_re(phrase: str) -> "re.Pattern[str]":
 
 
 _INCLUDE_RES = {k: _phrase_re(k) for k in INCLUDE_TITLE_KEYWORDS}
+_LOTTERY_RES = {k: _phrase_re(k) for k in LOTTERY_TITLE_KEYWORDS}
 _EXCLUDE_RES = {k: _phrase_re(k) for k in EXCLUDE_TITLE_KEYWORDS}
 _ONSITE_RES = {k: _phrase_re(k) for k in ONSITE_KEYWORDS}
 _ELIGIBILITY_RES = {k: _phrase_re(k) for k in ELIGIBILITY_PHRASES}
@@ -130,6 +140,15 @@ def match_include(text: str) -> "str | None":
     norm = normalize(text)
     for kw in _INCLUDE_ORDER:
         if _INCLUDE_RES[kw].search(norm):
+            return kw
+    return None
+
+
+def match_lottery_include(text: str) -> "str | None":
+    """Lottery-only titles. Never consulted for a non-lottery company."""
+    norm = normalize(text)
+    for kw in sorted(LOTTERY_TITLE_KEYWORDS, key=len, reverse=True):
+        if _LOTTERY_RES[kw].search(norm):
             return kw
     return None
 
@@ -474,12 +493,19 @@ def match_seniority(title: str) -> "str | None":
     return None
 
 
-def compute_tier(title: str) -> int:
-    """1, 2 or 3. Tier 1 requires a core keyword AND no seniority word."""
+def compute_tier(title: str, lottery: bool = False) -> int:
+    """1, 2 or 3. Tier 1 requires a core keyword AND no seniority word.
+
+    A lottery SWE title is tier 2 rather than tier 3 on purpose: the Lottery
+    digest section only takes tiers 1 and 2, so leaving it at 3 would mean the
+    scoped titles never actually appeared.
+    """
     norm = normalize(title)
     if any(rx.search(norm) for rx in _TIER1_RES) and not match_seniority(title):
         return 1
     if any(rx.search(norm) for rx in _TIER2_RES):
+        return 2
+    if lottery and match_lottery_include(title):
         return 2
     return 3
 
@@ -528,8 +554,13 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
 
     is_federal = posting.get("source") == FEDERAL_SOURCE
 
+    is_lottery = bool(posting.get("lottery"))
+
     keyword = match_include(title)
     matched_in = "title" if keyword else None
+    if not keyword and is_lottery:
+        keyword = match_lottery_include(title)
+        matched_in = "lottery title" if keyword else None
     if not keyword and match_description:
         keyword = match_include(description)
         matched_in = "description" if keyword else None
@@ -556,7 +587,7 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     result["matched_keyword"] = keyword
     result["matched_in"] = matched_in
     result["flags"] = compute_flags(description)
-    result["tier"] = compute_tier(title)
+    result["tier"] = compute_tier(title, lottery=is_lottery)
     result["remote"] = looks_remote(location, description, posting.get("remote"))
     result.pop("reject_reason", None)
     return result

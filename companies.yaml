@@ -11,6 +11,7 @@ companies:
   ats: greenhouse
   slug: cloudflare
   status: verified
+  lottery: true
 - name: Stripe
   ats: greenhouse
   slug: stripe
@@ -295,3 +296,327 @@ companies:
   slug: engine
   status: verified
   note: found via the Greenhouse cross-board feed, 2026-09-04
+- name: GitLab
+  ats: greenhouse
+  slug: gitlab
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Coinbase
+  ats: greenhouse
+  slug: coinbase
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Airbnb
+  ats: greenhouse
+  slug: airbnb
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Reddit
+  ats: greenhouse
+  slug: reddit
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Dropbox
+  ats: greenhouse
+  slug: dropbox
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Databricks
+  ats: greenhouse
+  slug: databricks
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Block
+  ats: greenhouse
+  slug: block
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Robinhood
+  ats: greenhouse
+  slug: robinhood
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Zapier
+  ats: ashby
+  slug: zapier
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Roblox
+  ats: greenhouse
+  slug: roblox
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Pinterest
+  ats: greenhouse
+  slug: pinterest
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Netflix
+  ats: eightfold
+  slug: explore.jobs.netflix.net/netflix.com
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Lyft
+  ats: greenhouse
+  slug: lyft
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Instacart
+  ats: greenhouse
+  slug: instacart
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Affirm
+  ats: greenhouse
+  slug: affirm
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Plaid
+  ats: ashby
+  slug: plaid
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Brex
+  ats: greenhouse
+  slug: brex
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Ramp
+  ats: ashby
+  slug: ramp
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Chime
+  ats: greenhouse
+  slug: chime
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Gusto
+  ats: greenhouse
+  slug: gusto
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Carta
+  ats: greenhouse
+  slug: carta
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Airtable
+  ats: greenhouse
+  slug: airtable
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Asana
+  ats: greenhouse
+  slug: asana
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Miro
+  ats: ashby
+  slug: miro
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Amplitude
+  ats: greenhouse
+  slug: amplitude
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Confluent
+  ats: ashby
+  slug: confluent
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Redis
+  ats: ashby
+  slug: redis
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Neo4j
+  ats: greenhouse
+  slug: neo4j
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: ClickHouse
+  ats: ashby
+  slug: clickhouse
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: LaunchDarkly
+  ats: greenhouse
+  slug: launchdarkly
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Fivetran
+  ats: greenhouse
+  slug: fivetran
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Hex
+  ats: ashby
+  slug: hex
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Postman
+  ats: greenhouse
+  slug: postman
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Kong
+  ats: ashby
+  slug: kong
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Stytch
+  ats: ashby
+  slug: stytch
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Tailscale
+  ats: greenhouse
+  slug: tailscale
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Fastly
+  ats: greenhouse
+  slug: fastly
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Cohere
+  ats: ashby
+  slug: cohere
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Baseten
+  ats: ashby
+  slug: baseten
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Modal
+  ats: ashby
+  slug: modal
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Anyscale
+  ats: ashby
+  slug: anyscale
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Sierra
+  ats: ashby
+  slug: sierra
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Harvey
+  ats: ashby
+  slug: harvey
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Abridge
+  ats: ashby
+  slug: abridge
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Perplexity
+  ats: ashby
+  slug: perplexity
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: AssemblyAI
+  ats: greenhouse
+  slug: assemblyai
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Cresta
+  ats: greenhouse
+  slug: cresta
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Vanta
+  ats: ashby
+  slug: vanta
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Drata
+  ats: ashby
+  slug: drata
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Semgrep
+  ats: ashby
+  slug: semgrep
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Orca Security
+  ats: greenhouse
+  slug: orcasecurity
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Abnormal Security
+  ats: greenhouse
+  slug: abnormalsecurity
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Tines
+  ats: greenhouse
+  slug: tines
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05
+- name: Discord
+  ats: greenhouse
+  slug: discord
+  status: verified
+  lottery: true
+  note: lottery tier, discovered 2026-09-05

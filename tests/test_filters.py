@@ -1006,3 +1006,92 @@ def test_the_example_template_ships_with_every_answer_blank():
     assert book["answers"], "template should list the questions"
     assert all(not (e.get("answer") or "").strip() for e in book["answers"])
     assert all(not str(v or "").strip() for v in book["profile"].values())
+
+
+# --- lottery ---------------------------------------------------------------
+
+def lot(**kwargs):
+    base = dict(posting(source="greenhouse", company="Databricks",
+                        title="Software Engineer II", url="https://l/1"))
+    base["lottery"] = True
+    base.update(kwargs)
+    return base
+
+
+@pytest.mark.parametrize("title", [
+    "Software Engineer II", "Software Engineer 2", "SWE II, Payments",
+    "Security Software Engineer II, Detection and Response",
+])
+def test_lottery_titles_match_only_for_lottery_companies(title):
+    assert filters.match_include(title) is None
+    assert filters.match_lottery_include(title) is not None
+    kept = filters.evaluate(lot(title=title))
+    assert kept is not None
+    assert kept["matched_in"] == "lottery title"
+    # The same title at a non-lottery company is not a match.
+    assert filters.evaluate(lot(title=title, lottery=False)) is None
+
+
+def test_lottery_swe_titles_are_tier_2_so_they_reach_the_section():
+    """The Lottery section takes tiers 1 and 2 only; at tier 3 the scoped
+    titles would never appear."""
+    assert filters.compute_tier("Software Engineer II", lottery=True) == 2
+    assert filters.compute_tier("Software Engineer II") == 3
+    assert filters.evaluate(lot())["tier"] == 2
+
+
+def test_a_plain_software_engineer_title_is_still_not_a_match():
+    assert filters.match_lottery_include("Software Engineer") is None
+    assert filters.evaluate(lot(title="Software Engineer")) is None
+    assert filters.evaluate(lot(title="Senior Software Engineer")) is None
+
+
+def test_lottery_exclusions_still_apply():
+    assert filters.evaluate(lot(title="Staff Software Engineer II")) is None
+    assert filters.evaluate(lot(title="Software Engineer II Intern")) is None
+
+
+def test_lottery_section_takes_tier_1_and_2_only():
+    import digest
+    assert digest.is_lottery_pick(lot(title="Software Engineer II")) is True
+    assert digest.is_lottery_pick(lot(title="Support Engineer")) is True
+    # Tier 3 at a lottery company stays in the ordinary listing.
+    assert digest.is_lottery_pick(lot(title="Sales Engineer")) is False
+    assert digest.is_lottery_pick(posting(title="Support Engineer")) is False
+
+
+def test_each_posting_lands_in_exactly_one_section():
+    import digest
+    rows = [posting(title="Support Engineer", url="https://x/1"),
+            lot(title="Support Engineer", url="https://x/2"),
+            lot(title="Sales Engineer", url="https://x/3")]
+    md = digest.render(rows, by_tier=True)
+    assert md.count("https://x/2") == 1
+    assert md.index("https://x/3") < md.index("## Lottery")
+    assert "3 matches" in md
+
+
+def test_lottery_order_prefers_salary_then_recency():
+    import digest
+    rows = [lot(url="https://l/1", posted_at="2026-09-01", salary_max=None),
+            lot(url="https://l/2", posted_at="2026-09-04", salary_max=None)]
+    # No salary anywhere: newest first.
+    assert [r["url"] for r in digest._lottery_order(rows)] == ["https://l/2", "https://l/1"]
+    rows[0]["salary_max"] = 300000.0
+    # A published salary wins over recency.
+    assert digest._lottery_order(rows)[0]["url"] == "https://l/1"
+
+
+def test_the_lottery_flag_survives_the_database(tmp_path):
+    """tier is not a stored column, so the flag has to be, or a SWE title read
+    back recomputes as tier 3 and drops out of the section."""
+    import store, digest
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [lot(title="Software Engineer II", url="https://l/9")])
+        row = store.recent(conn, days=1)[0]
+        assert row["lottery"] is True
+        assert digest._tier(row) == 2
+        assert digest.is_lottery_pick(row) is True
+    finally:
+        conn.close()

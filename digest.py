@@ -8,11 +8,17 @@ from filters import TIER_LABELS, compute_tier
 
 def _tier(posting: dict) -> int:
     """Tier is derived from the title, so rows stored before tiering existed
-    still sort correctly without a schema migration."""
+    still sort correctly without a schema migration.
+
+    The lottery flag has to be passed through: tier is not a stored column, so
+    a lottery SWE title read back from SQLite would otherwise recompute as tier
+    3 and never reach the Lottery section.
+    """
     tier = posting.get("tier")
     if tier in (1, 2, 3):
         return tier
-    return compute_tier(posting.get("title") or "")
+    return compute_tier(posting.get("title") or "",
+                        lottery=bool(posting.get("lottery")))
 
 
 def _group_by_company(postings: "list[dict]") -> "list[tuple[str, list[dict]]]":
@@ -41,15 +47,81 @@ FEDERAL_SOURCE = "usajobs"
 FEDERAL_HEADING = "Federal (USAJOBS)"
 PARTNER_SOURCE = "workday"
 PARTNER_HEADING = "Partner / consulting"
+LOTTERY_HEADING = "Lottery"
+LOTTERY_TIERS = (1, 2)
+
+
+def is_lottery_pick(posting) -> bool:
+    """A lottery company's tier 1 or tier 2 match. Tier 3 stays where it is."""
+    return bool(posting.get("lottery")) and _tier(posting) in LOTTERY_TIERS
 
 
 def _split_federal(postings):
-    """(federal, partner, everything else). Each gets its own section."""
+    """(federal, partner, lottery, everything else).
+
+    Each posting lands in exactly one section, so the totals do not double
+    count. A lottery company's tier 3 match is not a lottery pick and stays in
+    the ordinary tier listing.
+    """
     federal = [p for p in postings if p.get("source") == FEDERAL_SOURCE]
-    partner = [p for p in postings if p.get("source") == PARTNER_SOURCE]
-    rest = [p for p in postings
-            if p.get("source") not in (FEDERAL_SOURCE, PARTNER_SOURCE)]
-    return federal, partner, rest
+    partner = [p for p in postings
+               if p.get("source") == PARTNER_SOURCE and p not in federal]
+    taken = federal + partner
+    lottery = [p for p in postings if p not in taken and is_lottery_pick(p)]
+    rest = [p for p in postings if p not in taken and p not in lottery]
+    return federal, partner, lottery, rest
+
+
+def _lottery_order(postings):
+    """Salary max first where published, then newest.
+
+    Greenhouse publishes no pay at all - zero populated pay fields across
+    Databricks, Coinbase, Roblox, Pinterest and GitLab - so in practice this
+    is date order, and the salary key only does anything for a source that
+    actually reports one.
+    """
+    return sorted(
+        postings,
+        key=lambda p: (
+            -(p.get("salary_max") or 0),
+            p.get("posted_at") or "",
+        ),
+        reverse=False,
+    ) if any(p.get("salary_max") for p in postings) else sorted(
+        postings, key=lambda p: (p.get("posted_at") or ""), reverse=True
+    )
+
+
+def _render_lottery_md(lottery, lines):
+    lines.append("## " + LOTTERY_HEADING + " (" + str(len(lottery)) + ")")
+    lines.append("_tier 1 and 2 at lottery-tagged companies; "
+                 "salary first where published, otherwise newest_")
+    lines.append("")
+    for posting in _lottery_order(lottery):
+        lines.append("- **" + (posting.get("company") or "").strip()
+                     + " - " + (posting.get("title") or "(untitled)").strip()
+                     + "**  [T" + str(_tier(posting)) + "]")
+        bits = []
+        if posting.get("salary_max"):
+            bits.append(_salary_text(posting))
+        if posting.get("location"):
+            bits.append((posting.get("location") or "").strip()[:110])
+        if posting.get("employment_type"):
+            bits.append((posting.get("employment_type") or "").strip())
+        posted = _short_date(posting.get("posted_at") or "")
+        if posted:
+            bits.append("posted " + posted)
+        bits.append(str(posting.get("source")))
+        keyword = posting.get("matched_keyword")
+        if keyword:
+            bits.append('matched "' + keyword + '" in '
+                        + str(posting.get("matched_in") or "title"))
+        lines.append("  - " + " | ".join(bits))
+        flag_text = _flag_line(posting)
+        if flag_text:
+            lines.append("  - FLAGS: " + flag_text)
+        lines.append("  - " + (posting.get("url") or ""))
+    lines.append("")
 
 
 def _render_partner_md(partner, lines):
@@ -151,12 +223,12 @@ def render(
 ) -> str:
     today = dt.datetime.now().strftime("%Y-%m-%d")
     lines = ["# " + title + " - " + today, ""]
-    federal, partner, postings = _split_federal(postings)
+    federal, partner, lottery, postings = _split_federal(postings)
 
-    if not postings and not federal and not partner:
+    if not postings and not federal and not partner and not lottery:
         lines.append("_" + empty_note + "_")
     else:
-        every = postings + federal + partner
+        every = postings + federal + partner + lottery
         total = len(every)
         flagged = sum(1 for p in every if p.get("flags"))
         summary = str(total) + " match" + ("" if total == 1 else "es")
@@ -174,6 +246,8 @@ def render(
             tier_line += " | Federal: " + str(len(federal))
         if partner:
             tier_line += " | Partner: " + str(len(partner))
+        if lottery:
+            tier_line += " | Lottery: " + str(len(lottery))
         lines.append(tier_line)
         lines.append("")
 
@@ -196,6 +270,9 @@ def render(
                                                             (p.get("title") or "").lower())):
                     _render_posting(posting, show_company=False, lines=lines)
                 lines.append("")
+
+    if lottery:
+        _render_lottery_md(lottery, lines)
 
     if partner:
         _render_partner_md(partner, lines)
@@ -260,12 +337,12 @@ def render_html(
         return _html.escape(str(text or ""))
 
     today = dt.datetime.now().strftime("%Y-%m-%d")
-    federal, partner, postings = _split_federal(postings)
+    federal, partner, lottery, postings = _split_federal(postings)
     out = ['<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;'
            'font-size:14px;line-height:1.5;color:#111">']
     out.append("<h2 style='margin:0 0 4px'>" + esc(title) + " &ndash; " + today + "</h2>")
 
-    if not postings and not federal and not partner:
+    if not postings and not federal and not partner and not lottery:
         out.append("<p><em>" + esc(empty_note) + "</em></p></div>")
         return "\n".join(out)
 
@@ -273,8 +350,10 @@ def render_html(
     for posting in postings:
         tally[_tier(posting)] += 1
     summary = ("<p style='margin:0 0 16px;color:#555'>"
-               + str(len(postings) + len(federal) + len(partner)) + " matches across "
-               + str(len({p.get("company") for p in postings + federal + partner}))
+               + str(len(postings) + len(federal) + len(partner) + len(lottery))
+               + " matches across "
+               + str(len({p.get("company")
+                          for p in postings + federal + partner + lottery}))
                + " companies"
                + " &middot; Tier 1: " + str(tally[1])
                + " &middot; Tier 2: " + str(tally[2])
@@ -283,6 +362,8 @@ def render_html(
         summary += " &middot; Federal: " + str(len(federal))
     if partner:
         summary += " &middot; Partner: " + str(len(partner))
+    if lottery:
+        summary += " &middot; Lottery: " + str(len(lottery))
     out.append(summary + "</p>")
 
     groups = (
@@ -314,6 +395,36 @@ def render_html(
             bits.append(esc(posting.get("source")))
             out.append("<span style='color:#666'>" + " &middot; ".join(b for b in bits if b)
                        + "</span>")
+            flags = posting.get("flags") or []
+            if flags:
+                out.append("<br><span style='color:#b3261e'>FLAGS: "
+                           + esc(", ".join(flags)) + "</span>")
+            out.append("</li>")
+        out.append("</ul>")
+
+    if lottery:
+        out.append("<h3 style='margin:20px 0 8px;border-bottom:1px solid #ddd;"
+                   "padding-bottom:4px'>" + esc(LOTTERY_HEADING)
+                   + " (" + str(len(lottery)) + ")</h3>")
+        out.append("<ul style='margin:0;padding-left:18px'>")
+        for posting in _lottery_order(lottery):
+            out.append("<li style='margin-bottom:10px'>")
+            out.append("<a href='" + esc(posting.get("url")) + "' style='font-weight:600;"
+                       "color:#0b57d0;text-decoration:none'>"
+                       + esc(posting.get("company")) + " &ndash; "
+                       + esc(posting.get("title")) + "</a> "
+                       + "<span style='color:#888'>T" + str(_tier(posting))
+                       + "</span><br>")
+            bits = []
+            if posting.get("salary_max"):
+                bits.append("<strong>" + esc(_salary_text(posting)) + "</strong>")
+            if posting.get("location"):
+                bits.append(esc(posting.get("location")))
+            posted = _short_date(posting.get("posted_at") or "")
+            if posted:
+                bits.append("posted " + posted)
+            out.append("<span style='color:#666'>"
+                       + " &middot; ".join(b for b in bits if b) + "</span>")
             flags = posting.get("flags") or []
             if flags:
                 out.append("<br><span style='color:#b3261e'>FLAGS: "

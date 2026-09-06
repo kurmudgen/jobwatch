@@ -13,8 +13,9 @@ import re
 import requests
 
 from sources import (
-    ASHBY_URL, BROWSER_UA, GREENHOUSE_URL, LEVER_URL, TIMEOUT,
-    WORKDAY_JSON_HEADERS, WORKDAY_LIST_URL, parse_workday_slug,
+    ASHBY_URL, BROWSER_UA, EIGHTFOLD_PAGE_SIZE, EIGHTFOLD_URL, GREENHOUSE_URL,
+    LEVER_URL, TIMEOUT, WORKDAY_JSON_HEADERS, WORKDAY_LIST_URL,
+    parse_eightfold_slug, parse_workday_slug,
 )
 
 log = logging.getLogger("jobwatch.verify")
@@ -147,10 +148,36 @@ def _probe_workday(slug: str) -> "tuple[bool, str]":
     return True, str(payload.get("total") or len(payload["jobPostings"])) + " jobs"
 
 
+def _probe_eightfold(slug: str) -> "tuple[bool, str]":
+    try:
+        host, domain = parse_eightfold_slug(slug)
+    except ValueError as exc:
+        return False, str(exc)
+    url = (EIGHTFOLD_URL.format(host=host)
+           + "?domain=" + domain + "&start=0&num=1")
+    try:
+        response = requests.get(url, timeout=TIMEOUT,
+                                headers={"User-Agent": BROWSER_UA,
+                                         "Accept": "application/json"})
+    except Exception as exc:  # noqa: BLE001
+        return False, "request failed: " + str(exc)
+    if response.status_code != 200:
+        return False, "HTTP " + str(response.status_code)
+    try:
+        payload = response.json()
+    except ValueError:
+        return False, "non-JSON response"
+    if "positions" not in payload:
+        return False, "no positions in response"
+    return True, str(payload.get("count") or len(payload["positions"])) + " jobs"
+
+
 def probe(ats: str, slug: str) -> "tuple[bool, str]":
     """Return (ok, detail). ok means the board returned a usable job list."""
     if ats == "workday":
         return _probe_workday(slug)
+    if ats == "eightfold":
+        return _probe_eightfold(slug)
     template = URL_TEMPLATES.get(ats)
     if not template:
         return False, "unknown ats: " + str(ats)
@@ -179,7 +206,7 @@ def verify_company(entry: dict) -> dict:
     ats = (entry.get("ats") or "").lower()
     seeded = entry.get("slug") or ""
 
-    if ats == "workday":
+    if ats in ("workday", "eightfold"):
         ok, detail = probe(ats, seeded)
         result["status"] = "verified" if ok else "unverified"
         result["jobs"] = int(detail.split()[0]) if ok else 0

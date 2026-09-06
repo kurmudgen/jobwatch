@@ -39,6 +39,8 @@ FIELDS = (
     # Application deadline. Only USAJOBS publishes one; None means "no known
     # deadline", which is treated as open.
     "closes_at",
+    # True when the company is tagged lottery: true in companies.yaml.
+    "lottery",
 )
 
 
@@ -844,6 +846,89 @@ def fetch_workday(slug: str, company: str, enrich: bool = True) -> "list[dict]":
                     row[key] = value
     return rows
 
+# --- Eightfold ---------------------------------------------------------------
+#
+# Netflix and others host on Eightfold, which exposes an unauthenticated JSON
+# search. The slug in companies.yaml is "host/domain", e.g.
+# "explore.jobs.netflix.net/netflix.com", because the careers host and the
+# domain parameter differ.
+#
+#   GET https://{host}/api/apply/v2/jobs?domain={domain}&start=0&num=50
+#
+# Verified live: 501 positions for Netflix, `query` narrows it, and `start`
+# pages. Positions carry name, location(s), canonicalPositionUrl, t_update as
+# an epoch, and job_description.
+
+EIGHTFOLD_URL = "https://{host}/api/apply/v2/jobs"
+EIGHTFOLD_PAGE_SIZE = 50
+EIGHTFOLD_MAX_PAGES = 6      # 300 rows is well past what the filters keep
+
+
+def parse_eightfold_slug(slug: str):
+    """"explore.jobs.netflix.net/netflix.com" -> (host, domain)."""
+    parts = [p for p in (slug or "").split("/") if p]
+    if len(parts) != 2:
+        raise ValueError(
+            "eightfold slug must be 'host/domain', e.g. "
+            "explore.jobs.netflix.net/netflix.com, got " + repr(slug)
+        )
+    return parts[0], parts[1]
+
+
+def normalize_eightfold(payload: dict, company: str) -> "list[dict]":
+    out = []
+    for job in payload.get("positions") or []:
+        if not isinstance(job, dict):
+            continue
+        url = job.get("canonicalPositionUrl") or ""
+        if not url:
+            continue
+        locations = job.get("locations")
+        if isinstance(locations, list) and locations:
+            location = ", ".join(str(loc) for loc in locations if loc)
+        else:
+            location = str(job.get("location") or "")
+        # work_location_option is unreliable - Netflix returns "onsite" on a
+        # position whose location reads "USA - Remote" - so it is recorded in
+        # the text rather than trusted as the answer.
+        mode = str(job.get("work_location_option") or "").strip()
+        description = html_to_text(job.get("job_description"))
+        if mode:
+            description = (description + "\n\nWork location option: " + mode).strip()
+        out.append(_posting(
+            source="eightfold",
+            company=company,
+            title=job.get("name") or job.get("posting_name"),
+            location=location,
+            remote=None,
+            employment_type=str(job.get("type") or ""),
+            url=url,
+            posted_at=job.get("t_update") or job.get("t_create"),
+            description_text=description,
+        ))
+    return out
+
+
+def fetch_eightfold(slug: str, company: str) -> "list[dict]":
+    host, domain = parse_eightfold_slug(slug)
+    seen, rows = set(), []
+    for page in range(EIGHTFOLD_MAX_PAGES):
+        url = EIGHTFOLD_URL.format(host=host) + "?" + urlencode({
+            "domain": domain,
+            "start": page * EIGHTFOLD_PAGE_SIZE,
+            "num": EIGHTFOLD_PAGE_SIZE,
+        })
+        payload = _get_json(url, headers={"User-Agent": BROWSER_UA,
+                                          "Accept": "application/json"})
+        found = normalize_eightfold(payload, company)
+        new = [r for r in found if r["url"] not in seen]
+        seen.update(r["url"] for r in new)
+        rows.extend(new)
+        if len(found) < EIGHTFOLD_PAGE_SIZE:
+            break
+    log.info("eightfold %s: %d postings", company, len(rows))
+    return rows
+
 # --- orchestration ----------------------------------------------------------
 
 ATS_FETCHERS = {
@@ -851,6 +936,7 @@ ATS_FETCHERS = {
     "lever": fetch_lever,
     "ashby": fetch_ashby,
     "workday": fetch_workday,
+    "eightfold": fetch_eightfold,
 }
 
 BOARD_FETCHERS = {
@@ -881,6 +967,9 @@ def collect(companies, boards=None, skip_unverified=True):
             continue
         try:
             found = fetcher(slug, name)
+            if entry.get("lottery"):
+                for row in found:
+                    row["lottery"] = True
             log.info("%s: %d postings", label, len(found))
             postings.extend(found)
         except Exception as exc:  # noqa: BLE001 - one source must not kill the run

@@ -213,6 +213,11 @@ def cmd_verify(args) -> int:
             "slug": result.get("slug"),
             "status": result.get("status"),
         }
+        # Carry through any extra keys the entry had (lottery, custom notes);
+        # rebuilding the dict from scratch used to drop them silently.
+        for key, value in entry.items():
+            if key not in clean and key not in ("jobs", "tried"):
+                clean[key] = value
         if result.get("note"):
             clean["note"] = result["note"]
         updated.append(clean)
