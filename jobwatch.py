@@ -15,11 +15,25 @@ import sys
 import config
 import answers as answers_mod
 import digest
+import salary as salary_mod
 import filters
 import forms
 import sources
 import store
 import verify as verify_mod
+
+
+def _enrich_lottery_salary(rows):
+    """Parse published pay for tier 1 lottery picks only.
+
+    Greenhouse has no pay field, but pay-transparency law puts the range in the
+    description prose. Scoped to tier 1 lottery because that is the short list
+    worth ranking by money.
+    """
+    return salary_mod.enrich(
+        rows,
+        only=lambda p: digest.is_lottery_pick(p) and digest._tier(p) == 1,
+    )
 
 
 def cmd_run(args) -> int:
@@ -57,6 +71,7 @@ def cmd_run(args) -> int:
     n_us_remote = len(matches)
     matches = filters.dedupe(matches)
     log.info("dedupe: %d -> %d", n_us_remote, len(matches))
+    _enrich_lottery_salary(matches)
 
     conn = store.connect()
     try:
@@ -106,14 +121,16 @@ def cmd_list(args) -> int:
         rows = store.recent(conn, days=args.days)
     finally:
         conn.close()
-    if not args.include_closed:
+    if not args.include_applied:
         rows = [r for r in rows if not r.get("applied_at")]
-    rows = filters.filter_open(rows)
+    if not args.include_closed:
+        rows = filters.filter_open(rows)
     if args.us_remote:
         rows = filters.filter_us_remote(rows)
     rows = filters.dedupe(rows)
     if args.only_tier:
         rows = [r for r in rows if filters.compute_tier(r.get("title") or "") == args.only_tier]
+    _enrich_lottery_salary(rows)
     renderer = digest.render_html if args.html else digest.render
     print(renderer(
         rows,

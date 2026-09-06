@@ -333,11 +333,36 @@ application on comp alone. Two things change for them:
 A lottery SWE title is deliberately tiered **2**, not 3 — the section only takes
 tiers 1 and 2, so at tier 3 the scoped titles would never have appeared.
 
-Ordering is salary max first, then newest. In practice it is date order:
-**Greenhouse publishes no pay at all** — zero populated pay fields across
-Databricks, Coinbase, Roblox, Pinterest and GitLab — so `salary_max` is empty
-for almost everything outside USAJOBS. "Lottery" is a curation judgment about
-which companies pay top of market, not a measured salary filter.
+Ordering is salary max first, then newest.
+
+**Greenhouse publishes no pay field** — zero populated pay metadata across
+Databricks, Coinbase, Roblox, Pinterest and GitLab — but US pay-transparency law
+puts the range in the description prose, so `salary.py` parses it out. That runs
+for **tier 1 lottery picks only**, which is the short list actually worth
+ranking by money; it read a range from 13 of 13 on the first pass.
+
+Every rule in the parser came from a real posting:
+
+| Posting text | Handled as |
+| --- | --- |
+| `United States Salary Range $86,500 - $146,400 USD` | base |
+| `US Pay Range (OTE) $150,000 - $200,000` | OTE, kept separate from base |
+| `CAN Pay Range $84,420 - $132,660 CAD` | flagged CAD, never stored as USD |
+| `Salary Range: $90,000-$105,000K base` | stray K suffix, not 105 million |
+| `raised more than $270 million from ... investors` | rejected, not pay |
+| `$1500 USD annually for professional development` | rejected, not pay |
+| `Base salary range: $25.77 - $37.02 USD` | hourly, annualized at 2087h |
+| three geographic zones | all captured; the "all other US locations" band wins |
+
+A range only counts when a pay word appears within 220 characters before it, both
+figures land in a plausible band (30k-1.5M annual, $15-500 hourly) and the spread
+is under 5x. Base is preferred over OTE and USD over CAD, because that is what
+compares across postings.
+
+The **"all other US locations"** zone is preferred deliberately: a remote
+candidate outside the listed metros falls in the catch-all band, and it is always
+the lowest of the three. Taking the headline Zone 1 number would overstate the
+offer.
 
 The flag is stored on the posting, not just the company, because tier is derived
 at render time: a SWE title read back from SQLite without it recomputes as tier

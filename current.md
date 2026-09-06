@@ -1,14 +1,17 @@
-# jobwatch: matches from the last 30 days - 2026-09-03
+# jobwatch: matches from the last 60 days - 2026-09-06
 
-31 matches across 14 companies (3 flagged for manual review)
-Tier 1: 9 | Tier 2: 7 | Tier 3: 15
+115 matches across 39 companies (17 flagged for manual review)
+Tier 1: 15 | Tier 2: 8 | Tier 3: 47 | Lottery: 45
 
-## Tier 1 - core target (9)
+## Tier 1 - core target (15)
+- **Anthropic - IT Support Engineer, Application Administrator**
+  - San Francisco, CA | New York City, NY (Remote-Friendly US (Travel Required)) | remote | posted 2026-08-14 | greenhouse | matched "support engineer" in title
+  - https://job-boards.greenhouse.io/anthropic/jobs/5390019008
 - **Grafana Labs - Solutions Engineer | Central US | Remote**
-  - United States (Remote) | remote | posted 2026-07-27 | greenhouse | matched "solutions engineer" in title
+  - United States (Remote) (USA (Remote)) | remote | posted 2026-07-27 | greenhouse | matched "solutions engineer" in title
   - https://job-boards.greenhouse.io/grafanalabs/jobs/6127968004
 - **PlanetScale - Enterprise Support Engineer**
-  - Remote - NA, APAC, EMEA | remote | posted 2025-07-24 | greenhouse | matched "support engineer" in title
+  - Remote - NA, APAC, EMEA (Remote - APAC, Remote - EMEA) | remote | posted 2025-07-24 | greenhouse | matched "support engineer" in title
   - https://job-boards.greenhouse.io/planetscale/jobs/4009926009
 - **PlanetScale - Solutions Engineer**
   - Remote - EMEA, Remote - NA | remote | posted 2025-10-29 | greenhouse | matched "solutions engineer" in title
@@ -31,8 +34,23 @@ Tier 1: 9 | Tier 2: 7 | Tier 3: 15
 - **Supabase - Support Engineer (EMEA - Weekends)**
   - Remote, Global | remote | FullTime | posted 2026-07-31 | ashby | matched "support engineer" in title
   - https://jobs.ashbyhq.com/supabase/590a0742-97f1-47f4-81a2-567efc939ae2
+- **Verkada - Enterprise Solutions Engineer, Bay Area CORP**
+  - San Mateo, CA United States (California Remote) | remote | Full-Time | posted 2026-08-24 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/verkada/jobs/5205276007
+- **Verkada - Enterprise Solutions Engineer, NorthCentral Corp**
+  - Chicago, IL United States (Illinois Remote, Indiana Remote, Michigan Remote, Ohio Remote) | remote | Full-Time | posted 2026-03-26 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/verkada/jobs/4669998007
+- **Verkada - Enterprise Solutions Engineer, Northeast SLED**
+  - Boston, MA United States (Massachusetts Remote, New York Remote) | remote | Full-Time | posted 2026-09-04 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/verkada/jobs/5231605007
+- **Verkada - Federal Solutions Engineer**
+  - San Mateo, CA United States (Arizona Remote, California Remote, Colorado Remote, Oregon Remote, Utah Remote, Washington  | remote | Full-Time | posted 2026-08-31 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/verkada/jobs/5226698007
+- **Verkada - Global Solutions Engineer**
+  - United States (California Remote) | remote | Full-Time | posted 2023-11-10 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/verkada/jobs/4140713007
 
-## Tier 2 - adjacent (7)
+## Tier 2 - adjacent (8)
 - **Cursor (Anysphere) - Forward Deployed Engineer**
   - San Francisco, New York, Remote | FullTime | posted 2026-03-13 | ashby | matched "deployed engineer" in title
   - https://jobs.ashbyhq.com/cursor/34cecd0c-c392-4454-8ef5-261310541011
@@ -42,6 +60,10 @@ Tier 1: 9 | Tier 2: 7 | Tier 3: 15
 - **Mastra - Mastra | Customer Engineer | REMOTE (AMER or EMEA time zones) | Full-time**
   - Mastra | Customer Engineer | REMOTE (AMER or EMEA time zones) | Full-time | remote | posted 2026-09-02 | hn | matched "customer engineer" in title
   - https://news.ycombinator.com/item?id=49543632
+- **Render - Customer Engineer**
+  - Remote: United States | remote | FullTime | posted 2026-09-04 | ashby | matched "customer engineer" in title
+  - FLAGS: `eligibility:not eligible`
+  - https://jobs.ashbyhq.com/render/324ad170-5bdd-44c7-becf-9c30a696178e
 - **Shovels - Shovels | Forward-Deployed Engineer (FDE) | Remote | Full-time**
   - Shovels | Forward-Deployed Engineer (FDE) | Remote | Full-time | remote | posted 2026-09-02 | hn | matched "deployed engineer" in title
   - https://news.ycombinator.com/item?id=49530020
@@ -57,51 +79,299 @@ Tier 1: 9 | Tier 2: 7 | Tier 3: 15
   - FLAGS: `clearance:clearance,dod`
   - https://job-boards.greenhouse.io/vannevarlabs/jobs/4172631007
 
-## Tier 3 - everything else (15)
+## Tier 3 - everything else (47)
+- **Abnormal Security - Enterprise Sales Engineer - Ohio Valley**
+  - Remote - USA | remote | posted 2026-08-20 | greenhouse | matched "sales engineer" in title
+  - FLAGS: `states:indiana,michigan,ohio`
+  - https://abnormal.ai/careers/jobs/7894655003?gh_jid=7894655003
+- **Abnormal Security - MidMarket Sales Engineer - Chicago**
+  - Remote - USA | remote | posted 2026-08-05 | greenhouse | matched "sales engineer" in title
+  - https://abnormal.ai/careers/jobs/7826372003?gh_jid=7826372003
+- **Abnormal Security - MidMarket Sales Engineer - Ohio Valley**
+  - Remote - USA | remote | posted 2026-08-19 | greenhouse | matched "sales engineer" in title
+  - https://abnormal.ai/careers/jobs/7894691003?gh_jid=7894691003
+- **Amplitude - Senior Sales Engineer - Enterprise (West)**
+  - Denver, CO; Los Angeles, CA; Phoenix, AZ; Portland, OR; San Diego, CA; San Francisco, CA; Scottsdale, AZ; Seattle, WA; T | remote | Regular | posted 2026-08-13 | greenhouse | matched "sales engineer" in title
+  - FLAGS: `states:california,new york`
+  - https://job-boards.greenhouse.io/amplitude/jobs/8705194002
+- **Auth0 (Okta) - Senior Solutions Engineer- Strategic - Minnesota (Okta)**
+  - Minnesota (US Remote Central) | remote | posted 2026-01-15 | greenhouse | matched "solutions engineer" in title
+  - FLAGS: `eligibility:excluding` `states:california,colorado,illinois,minnesota,new york,washington`
+  - https://www.okta.com/company/careers/opportunity/7536447?gh_jid=7536447
+- **Block - Senior Technical Account Manager, Cash App Pay & Afterpay**
+  - Bay Area, CA, United States of America (US - NY - NYC - Remote) | remote | posted 2026-05-21 | greenhouse | matched "technical account manager" in title
+  - http://block.xyz/careers/jobs/5175673008?gh_jid=5175673008
 - **Chainguard - Commercial Sales Engineer**
-  - United States - Remote | remote | posted 2026-08-05 | greenhouse | matched "sales engineer" in title
+  - United States - Remote (Remote - US) | remote | posted 2026-08-05 | greenhouse | matched "sales engineer" in title
   - https://job-boards.greenhouse.io/chainguard/jobs/4701693006
 - **Chainguard - Enterprise Sales Engineer - Central**
   - United States - Remote | remote | posted 2026-08-10 | greenhouse | matched "sales engineer" in title
   - https://job-boards.greenhouse.io/chainguard/jobs/4702736006
 - **Chainguard - Senior Enterprise Sales Engineer - Bay Area**
-  - United States - Remote | remote | posted 2026-08-05 | greenhouse | matched "sales engineer" in title
+  - United States - Remote (Remote - US) | remote | posted 2026-08-05 | greenhouse | matched "sales engineer" in title
   - https://job-boards.greenhouse.io/chainguard/jobs/4701654006
+- **Databricks - Sr. Solutions Engineer - Digital Native Business, Named Accounts**
+  - Florida; Remote - Massachusetts; Remote - New York; Remote - North Carolina; Remote - Pennsylvania; Remote - Virginia | remote | posted 2026-08-03 | greenhouse | matched "solutions engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8646516002
+- **Databricks - Sr. Solutions Engineer - Games**
+  - Northeast - United States (Remote - California) | remote | posted 2026-08-18 | greenhouse | matched "solutions engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8727543002
+- **Databricks - Sr. Solutions Engineer - MFG**
+  - Boston, Massachusetts (Remote - Illinois) | remote | posted 2026-04-01 | greenhouse | matched "solutions engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8417654002
+- **Databricks - Sr. Solutions Engineer - Public Sector (Defense Industrial Base)**
+  - Maryland; McLean, Virginia; Washington, D.C. (Remote - Virginia) | remote | posted 2026-06-11 | greenhouse | matched "solutions engineer" in title
+  - FLAGS: `eligibility:not eligible`
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8584983002
 - **Datadog - Developer Advocate - Service Management**
-  - California, USA, Remote; New York, USA, Remote | remote | posted 2026-08-18 | greenhouse | matched "developer advocate" in title
+  - California, USA, Remote; New York, USA, Remote (Remote - New York) | remote | posted 2026-08-18 | greenhouse | matched "developer advocate" in title
   - https://careers.datadoghq.com/detail/8139662/?gh_jid=8139662
 - **Datadog - Enterprise Sales Engineer - Rockies**
-  - Colorado, USA, Remote | remote | posted 2026-06-23 | greenhouse | matched "sales engineer" in title
+  - Colorado, USA, Remote (Remote - Colorado) | remote | posted 2026-06-23 | greenhouse | matched "sales engineer" in title
   - https://careers.datadoghq.com/detail/7857714/?gh_jid=7857714
 - **Datadog - Security Sales Engineer**
-  - Illinois, USA, Remote; Texas, USA, Remote | remote | posted 2026-01-23 | greenhouse | matched "sales engineer" in title
+  - Illinois, USA, Remote; Texas, USA, Remote (Remote - California, Remote - Colorado, Remote - Florida, Remote - Georgia, R | remote | posted 2026-01-23 | greenhouse | matched "sales engineer" in title
   - https://careers.datadoghq.com/detail/7554877/?gh_jid=7554877
 - **Datadog - Senior Developer Advocate - Modern App Development**
-  - California, USA, Remote; Nevada, USA, Remote; Texas, USA, Remote; Washington, USA, Remote | remote | posted 2026-06-05 | greenhouse | matched "developer advocate" in title
+  - California, USA, Remote; Nevada, USA, Remote; Texas, USA, Remote; Washington, USA, Remote (Remote - New York) | remote | posted 2026-06-05 | greenhouse | matched "developer advocate" in title
   - https://careers.datadoghq.com/detail/7985840/?gh_jid=7985840
 - **Datadog - Senior Sales Engineer - Key Accounts**
-  - Arizona, USA, Remote; California, USA, Remote; Nevada, USA, Remote; Oregon, USA, Remote; Washington, USA, Remote | remote | posted 2026-01-09 | greenhouse | matched "sales engineer" in title
+  - Arizona, USA, Remote; California, USA, Remote; Nevada, USA, Remote; Oregon, USA, Remote; Washington, USA, Remote (Remote | remote | posted 2026-01-09 | greenhouse | matched "sales engineer" in title
   - https://careers.datadoghq.com/detail/7516279/?gh_jid=7516279
 - **Datadog - Senior Sales Engineer - Majors (East)**
-  - New York, USA, Remote | remote | posted 2026-05-13 | greenhouse | matched "sales engineer" in title
+  - New York, USA, Remote (Remote - New York) | remote | posted 2026-05-13 | greenhouse | matched "sales engineer" in title
   - https://careers.datadoghq.com/detail/7917340/?gh_jid=7917340
+- **Drata - Senior Solutions Engineer, Enterprise - West**
+  - Remote - US | remote | FullTime | posted 2026-03-27 | ashby | matched "solutions engineer" in title
+  - https://jobs.ashbyhq.com/drata/4c85d329-b4b3-4b9d-a5d8-a7ad20a6e8f9
+- **Expel - Senior Security Solutions Engineer**
+  - Remote | remote | posted 2026-08-27 | greenhouse | matched "solutions engineer" in title
+  - https://expel.com/about/career-listing/8756232002?gh_jid=8756232002
+- **Fivetran - Senior Sales Engineer, Enterprise**
+  - Remote, Colorado, United States, AMER (USA - Denver) | remote | posted 2026-08-18 | greenhouse | matched "sales engineer" in title
+  - https://www.fivetran.com/careers/job?gh_jid=7875706003
+- **GitLab - Senior Assigned Support Engineer (AMER)**
+  - Remote, Canada; Remote, United States | remote | posted 2026-08-20 | greenhouse | matched "support engineer" in title
+  - https://job-boards.greenhouse.io/gitlab/jobs/8709925002
 - **Grafana Labs - Senior Solutions Engineer | East Coast | Remote**
   - United States (Remote) | remote | posted 2026-06-23 | greenhouse | matched "solutions engineer" in title
   - https://job-boards.greenhouse.io/grafanalabs/jobs/6099563004
 - **Grafana Labs - Senior Solutions Engineer | West Coast | Remote**
-  - United States (Remote) | remote | posted 2026-08-10 | greenhouse | matched "solutions engineer" in title
+  - United States (Remote) (USA (Remote)) | remote | posted 2026-08-10 | greenhouse | matched "solutions engineer" in title
   - https://job-boards.greenhouse.io/grafanalabs/jobs/6137468004
+- **LaunchDarkly - Senior Developer Advocate, AI**
+  - Oakland, California, United States (Remote - Oakland, CA) | remote | posted 2026-07-28 | greenhouse | matched "developer advocate" in title
+  - https://job-boards.greenhouse.io/launchdarkly/jobs/7819881003
+- **LaunchDarkly - Senior Developer Advocate, Growth**
+  - Remote - US | remote | posted 2026-07-28 | greenhouse | matched "developer advocate" in title
+  - https://job-boards.greenhouse.io/launchdarkly/jobs/7819879003
+- **LaunchDarkly - Senior Solutions Engineer**
+  - Remote - US East | remote | posted 2026-06-25 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/launchdarkly/jobs/7785931003
+- **LaunchDarkly - Senior Solutions Engineer - West**
+  - Remote - US West | remote | posted 2026-08-26 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/launchdarkly/jobs/7978505003
+- **Neo4j - Senior Developer Advocate**
+  - Remote: San Mateo area (Remote-USA) | remote | posted 2026-06-15 | greenhouse | matched "developer advocate" in title
+  - https://boards.greenhouse.io/neo4j/jobs/4689451006?gh_jid=4689451006
+- **Neo4j - Senior Solutions Engineer - Southeast**
+  - Remote: Southeast US (Remote-USA) | remote | posted 2026-08-13 | greenhouse | matched "solutions engineer" in title
+  - https://boards.greenhouse.io/neo4j/jobs/4705210006?gh_jid=4705210006
+- **Neo4j - Sr. Solutions Engineer (Financial Services & Insurance)**
+  - Remote: New York City | remote | posted 2026-07-14 | greenhouse | matched "solutions engineer" in title
+  - https://boards.greenhouse.io/neo4j/jobs/4696922006?gh_jid=4696922006
+- **Neo4j - Sr. Solutions Engineer - Central**
+  - Remote: Midwest US (Remote-USA) | remote | posted 2026-07-13 | greenhouse | matched "solutions engineer" in title
+  - https://boards.greenhouse.io/neo4j/jobs/4696600006?gh_jid=4696600006
+- **Rubrik - Sr. Sales Engineer - IL/WI Enterprise**
+  - Chicago, IL (United States - Remote) | remote | posted 2026-07-06 | greenhouse | matched "sales engineer" in title
+  - FLAGS: `states:illinois,wisconsin`
+  - https://www.rubrik.com/company/careers/departments/job.8044290?gh_jid=8044290
+- **Rubrik - Sr. Sales Engineer - TOLA Enterprise**
+  - Dallas, TX (United States - Remote) | remote | posted 2026-07-31 | greenhouse | matched "sales engineer" in title
+  - https://www.rubrik.com/company/careers/departments/job.8077569?gh_jid=8077569
 - **SerpApi - SerpApi | https://serpapi.com | Junior to Senior Fullstack Engineer multiple positions | Customer Success Engineer | Hiring Coordinator | Python/Ruby/PHP/Js/Rust/Cotlin/C#/Crystal/Nim/Elixir Developer Advocate positions | Based in Austin, TX but remote-first structure | Full-time | ONSITE or FULLY R**
   - SerpApi | https://serpapi.com | Junior to Senior Fullstack Engineer multiple positions | Customer Success Engineer | Hir | remote | posted 2026-09-02 | hn | matched "developer advocate" in title
   - https://news.ycombinator.com/item?id=49531646
+- **Sierra - Enterprise Sales Engineer**
+  - San Francisco, CA, US - Remote, New York, NY, Atlanta, GA | FullTime | posted 2024-01-28 | ashby | matched "sales engineer" in title
+  - https://jobs.ashbyhq.com/sierra/8152eaf6-012b-4154-95e2-7d6c52faba93
+- **Sierra - Enterprise Sales Engineer (Brazilian Portuguese speaking)**
+  - San Francisco, CA, US - Remote, New York, NY, Atlanta, GA | FullTime | posted 2026-08-11 | ashby | matched "sales engineer" in title
+  - https://jobs.ashbyhq.com/sierra/102b597d-876d-458f-bf11-58924df4b73d
+- **Sierra - Enterprise Sales Engineer (Spanish speaking)**
+  - San Francisco, CA, US - Remote, New York, NY, Atlanta, GA | FullTime | posted 2026-08-11 | ashby | matched "sales engineer" in title
+  - https://jobs.ashbyhq.com/sierra/adaa6543-00df-4e5f-8e40-e4327ccb764c
+- **Sierra - Enterprise Sales Engineer, Consumer Business Services**
+  - San Francisco, CA, US - Remote, New York, NY, Atlanta, GA | FullTime | posted 2026-08-21 | ashby | matched "sales engineer" in title
+  - https://jobs.ashbyhq.com/sierra/bde6daf0-ee01-4470-b1b2-77fc8d232f06
+- **Sierra - Enterprise Sales Engineer, Financial Services**
+  - San Francisco, CA, US - Remote, New York, NY, Atlanta, GA | FullTime | posted 2026-08-05 | ashby | matched "sales engineer" in title
+  - https://jobs.ashbyhq.com/sierra/41fa146b-73a4-41d0-a546-bcf504945772
+- **Sierra - Enterprise Sales Engineer, Healthcare**
+  - San Francisco, CA, US - Remote, New York, NY, Atlanta, GA | FullTime | posted 2026-08-05 | ashby | matched "sales engineer" in title
+  - https://jobs.ashbyhq.com/sierra/ab7ce8a1-d088-4808-93e2-a4162c315821
+- **Sierra - Enterprise Sales Engineer, Retail**
+  - San Francisco, CA, US - Remote, New York, NY, Atlanta, GA | FullTime | posted 2026-08-05 | ashby | matched "sales engineer" in title
+  - https://jobs.ashbyhq.com/sierra/17bd055c-c281-4c01-bf61-671710b25cc0
 - **Snowflake - Senior Solutions Engineer, Observe**
   - US-IL-Remote, Dallas, TX, US-CO-Denver | remote | FullTime | posted 2026-08-25 | ashby | matched "solutions engineer" in title
   - https://jobs.ashbyhq.com/snowflake/afaaccae-b713-4432-9c04-cc8b1be52d59
 - **Stripe - Integration Engineer, Metronome**
-  - Remote | remote | posted 2026-08-18 | greenhouse | matched "integration engineer" in title
+  - Remote (US) | remote | posted 2026-08-18 | greenhouse | matched "integration engineer" in title
   - https://stripe.com/jobs/search?gh_jid=8080454
+- **Tines - Senior Partner Solutions Engineer, Public Sector**
+  - United States - East (Remote) (United States (Remote)) | remote | posted 2026-07-17 | greenhouse | matched "solutions engineer" in title
+  - FLAGS: `states:maryland,virginia,washington`
+  - https://job-boards.greenhouse.io/tines/jobs/6118917004
 - **Twilio - Senior Solutions Engineer**
-  - Remote - US | remote | posted 2026-09-01 | greenhouse | matched "solutions engineer" in title
+  - Remote - US | remote | posted 2026-09-02 | greenhouse | matched "solutions engineer" in title
   - FLAGS: `eligibility:not eligible` `states:california,colorado,hawaii,illinois,maryland,massachusetts,+5`
-  - https://job-boards.greenhouse.io/twilio/jobs/8171110
+  - https://job-boards.greenhouse.io/twilio/jobs/8164891
+
+## Lottery (45)
+_tier 1 and 2 at lottery-tagged companies; salary first where published, otherwise newest_
+
+- **LaunchDarkly - Solutions Engineer - AI Focus**  [T1]
+  - $193,400 - $295,350 | Remote - US | posted 2026-07-10 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/launchdarkly/jobs/7800006003
+- **Cresta - Enterprise Solutions Engineer**  [T1]
+  - $200,000 - $275,000 | United States (Remote) (US (Remote)) | Full-time | posted 2025-09-04 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/cresta/jobs/4906900008
+- **Cresta - Strategic Solutions Engineer, East**  [T1]
+  - $225,000 - $275,000 | United States (Remote) (US (Remote)) | Full-time | posted 2025-11-11 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/cresta/jobs/4985070008
+- **Cresta - Solutions Engineer, AI Agent**  [T1]
+  - $225,000 - $275,000 | United States (Remote) (US (Remote)) | Full-time | posted 2026-07-23 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/cresta/jobs/5369032008
+- **Tailscale - Solutions Engineer - Commercial (Expansion Sales)**  [T1]
+  - $150,000 - $200,000 | Remote (United States) (Remote (Canada)) | Full-time | posted 2026-07-28 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/tailscale/jobs/4715836005
+- **Tailscale - Solutions Engineer - Commercial (New Business)**  [T1]
+  - $150,000 - $200,000 | Remote (United States) (Remote (Canada)) | Full-time | posted 2026-08-07 | greenhouse | matched "solutions engineer" in title
+  - https://job-boards.greenhouse.io/tailscale/jobs/4722326005
+- **Semgrep - Sales Solutions Engineer - Digital Native**  [T1]
+  - $152,000 - $190,000 | Remote - US | FullTime | posted 2026-08-12 | ashby | matched "solutions engineer" in title
+  - FLAGS: `states:arizona,california,colorado,connecticut,district of columbia,florida,+16`
+  - https://jobs.ashbyhq.com/semgrep/ddeaaf40-919b-4168-84e0-6c4e715ad208
+- **GitLab - Support Engineer, U.S. Government Support**  [T1]
+  - $95,200 - $160,800 | Remote, US (Federal) | posted 2026-07-14 | greenhouse | matched "support engineer" in title
+  - https://job-boards.greenhouse.io/gitlab/jobs/8628780002
+- **GitLab - Support Engineer (AMER)**  [T1]
+  - $86,500 - $146,400 | Remote, Canada; Remote, United States | posted 2026-07-31 | greenhouse | matched "support engineer" in title
+  - https://job-boards.greenhouse.io/gitlab/jobs/8654230002
+- **Tailscale - Customer Support Engineer (Tier 2)**  [T1]
+  - $97,000 - $121,000 | Remote (United States) (Remote (Canada)) | Full-time | posted 2026-06-26 | greenhouse | matched "customer support engineer" in title
+  - https://job-boards.greenhouse.io/tailscale/jobs/4709946005
+- **Cresta - Application Support Engineer**  [T1]
+  - $90,000 - $105,000 | United States (Remote) (US (Remote)) | Full-time | posted 2026-07-09 | greenhouse | matched "support engineer" in title
+  - https://job-boards.greenhouse.io/cresta/jobs/5318826008
+- **Abnormal Security - L1 Technical Support Engineer**  [T1]
+  - $53,782 - $77,261 | Remote - USA | posted 2026-07-27 | greenhouse | matched "technical support engineer" in title
+  - https://abnormal.ai/careers/jobs/7801478003?gh_jid=7801478003
+- **Cresta - Customer Engineer**  [T2]
+  - United States (Remote) (US (Remote)) | Full-time | posted 2024-09-10 | greenhouse | matched "customer engineer" in title
+  - https://job-boards.greenhouse.io/cresta/jobs/4122946008
+- **Cresta - Senior Forward Deployed Engineer (AI Agent)**  [T2]
+  - United States (Remote) (US (Remote)) | Full-time | posted 2025-06-12 | greenhouse | matched "deployed engineer" in title
+  - https://job-boards.greenhouse.io/cresta/jobs/4759347008
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Communications, Media, Entertainment & Games**  [T2]
+  - Austin, Texas (Remote - Texas) | posted 2026-03-12 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8461219002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Healthcare & Life Sciences**  [T2]
+  - Dallas, Texas (Remote - California) | posted 2026-04-03 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8494144002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Manufacturing**  [T2]
+  - Seattle, Washington (Remote - Texas) | posted 2026-04-03 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8494156002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Digital Native Business**  [T2]
+  - Mountain View, California; San Francisco, California (Remote - California) | posted 2026-04-07 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8488399002
+- **GitLab - Forward Deployed Engineer, AI and Agentic SDLC**  [T2]
+  - Remote, United States (United States of America) | posted 2026-05-06 | greenhouse | matched "deployed engineer" in title
+  - https://job-boards.greenhouse.io/gitlab/jobs/8517171002
+- **Confluent - Senior Software Engineer II**  [T2]
+  - Boston, Massachusetts, Chicago, Illinois, Remote, North Carolina, Dallas, Texas, Portland, Oregon | FullTime | posted 2026-05-07 | ashby | matched "software engineer ii" in lottery title
+  - https://jobs.ashbyhq.com/confluent/0b65c19f-c804-4f79-b1e3-c3ea035c3d76
+- **Databricks - AI Engineer - FDE (Forward Deployed Engineer)**  [T2]
+  - United States (Remote - California) | posted 2026-05-13 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8546367002
+- **Pinterest - Software Engineer II, Big Data, tvScientific**  [T2]
+  - San Francisco, CA, US; Remote, US (Palo Alto) | Regular | posted 2026-05-28 | greenhouse | matched "software engineer ii" in lottery title
+  - FLAGS: `eligibility:not eligible`
+  - https://www.pinterestcareers.com/jobs/?gh_jid=7782546
+- **Affirm - Software Engineer II, Backend (Capital Orchestration)**  [T2]
+  - Remote US (Remote Canada) | posted 2026-06-02 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7749755003
+- **Affirm - Software Engineer II, Back-end (Card Mgmt & Transaction Processing)**  [T2]
+  - Remote US (Remote Canada) | posted 2026-06-18 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7766277003
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Financial Services**  [T2]
+  - Dallas, Texas (Remote - California) | posted 2026-06-22 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8592928002
+- **Abnormal Security - Software Engineer II - Full Stack**  [T2]
+  - Remote - USA | posted 2026-06-30 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7786309003?gh_jid=7786309003
+- **Pinterest - Security Software Engineer II, Detection and Response**  [T2]
+  - San Francisco, CA, US; Remote, US | Regular | posted 2026-07-02 | greenhouse | matched "software engineer ii" in lottery title
+  - FLAGS: `eligibility:not eligible`
+  - https://www.pinterestcareers.com/jobs/?gh_jid=8015490
+- **Affirm - Software Engineer II, Backend (Test Infra)**  [T2]
+  - Remote US (Remote Canada) | posted 2026-07-10 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7727320003
+- **Coinbase - Forward Deployed Engineer, Legal [Office of the CTO]**  [T2]
+  - Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-13 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `eligibility:excluding`
+  - https://www.coinbase.com/careers/positions/8060884?gh_jid=8060884
+- **Coinbase - Forward Deployed Engineer, Finance [Office of the CTO]**  [T2]
+  - Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-22 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `eligibility:excluding`
+  - https://www.coinbase.com/careers/positions/8072932?gh_jid=8072932
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Retail**  [T2]
+  - Remote - California | posted 2026-07-23 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8647677002
+- **Coinbase - Forward Deployed Engineer, Compliance [Office of the CTO]**  [T2]
+  - Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-31 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `eligibility:excluding`
+  - https://www.coinbase.com/careers/positions/8099099?gh_jid=8099099
+- **Abnormal Security - Software Engineer II, Model Platform**  [T2]
+  - Remote - USA | posted 2026-08-07 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7829979003?gh_jid=7829979003
+- **Tailscale - Forward Deployed Engineer**  [T2]
+  - Remote (Canada) (Remote (United States)) | Full-time | posted 2026-08-17 | greenhouse | matched "deployed engineer" in title
+  - https://job-boards.greenhouse.io/tailscale/jobs/4724854005
+- **Instacart - Senior Software Engineer II, Marketing Enablement & Technology**  [T2]
+  - United States - Remote (Remote - Canada, Remote - United States) | Regular | posted 2026-08-19 | greenhouse | matched "software engineer ii" in lottery title
+  - https://instacart.careers/job/?gh_jid=8141533
+- **Tailscale - Customer Support Engineer (Tier 1)**  [T1]
+  - Remote (Canada) (Remote (United States)) | Full-time | posted 2026-08-19 | greenhouse | matched "customer support engineer" in title
+  - https://job-boards.greenhouse.io/tailscale/jobs/4724307005
+- **Affirm - Software Engineer II, Fullstack (App Experience)**  [T2]
+  - Remote US | posted 2026-08-21 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7819445003
+- **Databricks - Sr. Forward Deployed Engineer**  [T2]
+  - United States (Remote - California) | posted 2026-08-21 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8739484002
+- **Abnormal Security - Software Engineer II - Dev Accelerator**  [T2]
+  - Remote - USA | posted 2026-08-25 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7967606003?gh_jid=7967606003
+- **Databricks - AI Engineer - FDE (Forward Deployed Engineer) - U.S. Federal Sector**  [T2]
+  - Maryland; Virginia; Washington, D.C. (Remote - Washington D.C.) | posted 2026-08-28 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `states:maryland,virginia,washington` `clearance:clearance,secret`
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8760167002
+- **Abnormal Security - Software Engineer II - Data Security**  [T2]
+  - Remote - USA | posted 2026-08-31 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7981482003?gh_jid=7981482003
+- **Tines - Senior Forward Deployed Engineer - West**  [T2]
+  - North America (Remote) | posted 2026-09-02 | greenhouse | matched "deployed engineer" in title
+  - https://job-boards.greenhouse.io/tines/jobs/6141304004
+- **Instacart - Senior Software Engineer II, AI Labs & Foundations**  [T2]
+  - United States - Remote (Remote - United States) | Regular | posted 2026-09-02 | greenhouse | matched "software engineer ii" in lottery title
+  - https://instacart.careers/job/?gh_jid=8053797
+- **Affirm - Software Engineer II**  [T2]
+  - Remote Canada (Remote US) | posted 2026-09-04 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7981805003
+- **Affirm - Software Engineer II, Backend (Post-Transaction)**  [T2]
+  - Remote US | posted 2026-09-04 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7981803003
 

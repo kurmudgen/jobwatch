@@ -1095,3 +1095,116 @@ def test_the_lottery_flag_survives_the_database(tmp_path):
         assert digest.is_lottery_pick(row) is True
     finally:
         conn.close()
+
+
+# --- salary parsing --------------------------------------------------------
+#
+# Every case here is real text from a tier 1 lottery posting.
+
+@pytest.mark.parametrize("text,low,high,kind", [
+    ("United States Salary Range $86,500 — $146,400 USD", 86500, 146400, "base"),
+    ("US Pay Range (OTE) $150,000 — $200,000 USD", 150000, 200000, "ote"),
+    ("OTE Range: $200,000-$275,000 - variable & Offers Equity", 200000, 275000, "ote"),
+    ("Salary Range: $90,000–$105,000K base + Bonus", 90000, 105000, "base"),
+    ("compensation is $150K - $200K", 150000, 200000, "base"),
+])
+def test_salary_ranges_from_real_postings(text, low, high, kind):
+    import salary
+    parsed = salary.parse_salary(text)
+    assert parsed is not None
+    assert parsed["min"] == low and parsed["max"] == high
+    assert parsed["kind"] == kind
+
+
+@pytest.mark.parametrize("text", [
+    "Cresta has raised more than $270 million from the world's leading investors",
+    "Grow your career thoughtfully with $1500 USD annually for professional development",
+    "Our snacks budget is $50 - $100 per week",
+    "We serve 10,000 - 20,000 customers",
+    "",
+])
+def test_non_salary_text_is_ignored(text):
+    import salary
+    assert salary.parse_salary(text) is None
+
+
+def test_hourly_rates_are_annualized():
+    import salary
+    parsed = salary.parse_salary("Base salary range: $25.77 — $37.02 USD")
+    assert parsed["hourly"] is True
+    assert round(parsed["min"]) == round(25.77 * 2087)
+    assert round(parsed["max"]) == round(37.02 * 2087)
+
+
+def test_a_stray_k_suffix_does_not_multiply_a_full_number():
+    """Cresta writes "$90,000–$105,000K"; that is 105 thousand, not 105 million."""
+    import salary
+    assert salary.parse_salary("Salary Range: $90,000–$105,000K base")["max"] == 105000
+
+
+def test_canadian_pay_is_labelled_not_silently_compared():
+    import salary
+    parsed = salary.parse_salary("CAN Pay Range $84,420 — $132,660 CAD")
+    assert parsed["currency"] == "CAD"
+
+
+def test_usd_is_preferred_when_both_are_published():
+    import salary
+    text = ("US Pay Range $97,000 — $121,000 USD and "
+            "CAN Pay Range $84,420 — $132,660 CAD")
+    assert salary.parse_salary(text)["currency"] == "USD"
+
+
+def test_base_is_preferred_over_ote():
+    """Semgrep publishes both; the base figure is what compares across postings."""
+    import salary
+    text = "COMPENSATION Salary Range: $152,000 - $190,000 USD ($217,000 - $272,000 uncapped OTE)"
+    parsed = salary.parse_salary(text)
+    assert parsed["kind"] == "base"
+    assert (parsed["min"], parsed["max"]) == (152000, 190000)
+    assert parsed["ote_max"] == 272000
+
+
+def test_geographic_zones_prefer_the_all_other_us_band():
+    """A remote candidate outside the listed metros falls in the catch-all zone,
+    which is always the lowest of the three."""
+    import salary
+    text = ("Target pay ranges based on Geographic Zones for Level 4: "
+            "Zone 1: San Francisco, Boston, Seattle - $214,800 - $295,350 "
+            "Zone 2: Austin, Portland, Chicago - $193,400 - $265,870 "
+            "Zone 3: All other US locations - $182,600 - $251,020")
+    parsed = salary.parse_salary(text)
+    assert parsed["zones"] == 3
+    assert parsed["catchall_min"] == 182600
+    assert parsed["catchall_max"] == 251020
+
+
+def test_enrich_only_touches_the_postings_it_is_scoped_to():
+    import salary
+    rows = [
+        lot(title="Support Engineer", url="https://l/1",
+            description_text="United States Salary Range $86,500 — $146,400 USD"),
+        lot(title="Software Engineer II", url="https://l/2",
+            description_text="United States Salary Range $200,000 — $300,000 USD"),
+    ]
+    import digest
+    salary.enrich(rows, only=lambda p: digest.is_lottery_pick(p) and digest._tier(p) == 1)
+    assert rows[0]["salary_max"] == 146400      # tier 1, parsed
+    assert rows[1].get("salary_max") is None    # tier 2, left alone
+
+
+def test_enrich_never_overwrites_a_published_salary():
+    import salary
+    rows = [lot(title="Support Engineer", url="https://l/1", salary_max=999.0,
+                description_text="Salary Range $86,500 — $146,400 USD")]
+    salary.enrich(rows)
+    assert rows[0]["salary_max"] == 999.0
+
+
+def test_enrich_does_not_store_a_foreign_currency_as_if_it_were_usd():
+    import salary
+    rows = [lot(title="Support Engineer", url="https://l/1",
+                description_text="CAN Pay Range $84,420 — $132,660 CAD")]
+    salary.enrich(rows)
+    assert rows[0].get("salary_max") is None
+    assert "CAD" in rows[0]["salary_note"]
