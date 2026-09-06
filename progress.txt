@@ -407,3 +407,41 @@ that way; the public repo only ever gets answers.example.yaml.
 Next: PlanetScale Solutions Engineer is a 4-field form with every answer already
 in the profile block. PlanetScale Enterprise Support adds one written answer,
 which is now filled.
+
+## 2026-09-06 — salary parsing for tier 1 lottery
+
+44. salary.py parses published pay out of description prose (Greenhouse has no
+    pay field). Scoped to tier 1 lottery picks. 13 of 13 parsed.
+    Rules, all from real postings:
+      OTE kept separate from base (Tailscale/Cresta/Semgrep publish both)
+      CAD flagged, never stored as USD (Tailscale CAN Pay Range)
+      stray K on a full number not multiplied (Cresta "$105,000K")
+      hourly annualized at 2087h (Abnormal $25.77-$37.02)
+      rejected: "raised $270 million", "$1500 annually for professional dev"
+      geographic zones: prefers the "all other US locations" band, which is
+      what a remote candidate outside the listed metros actually gets, and is
+      always the lowest of the three.
+    Guards: pay word within 220 chars before, 30k-1.5M annual / $15-500 hourly,
+    spread under 5x.
+45. Fixed two cmd_list bugs found while wiring: --include-applied did nothing
+    (applied filter was gated on --include-closed) and --include-closed did
+    nothing (filter_open ran unconditionally).
+46. 278 tests passing.
+
+### Known gaps
+- LaunchDarkly "Solutions Engineer - AI Focus" Zone 3 reads "$182,600 -
+  $251,0202" in the source - a typo. That band is rejected as implausible, so
+  the posting reports 2 zones instead of 3. Real Zone 3 max is ~$251,020.
+- Tier 2 lottery picks are not parsed, by request. Sorting inside the Lottery
+  section is therefore salary-first for tier 1, date-first for tier 2.
+
+## STOP POINT — 2026-09-06
+Top of the lottery list by pay, all US-remote:
+  LaunchDarkly Solutions Engineer - AI Focus   $193,400-$295,350 (Zone 3 ~$182,600)
+  Cresta Solutions Engineer, AI Agent          $225,000-$275,000 OTE
+  Cresta Strategic Solutions Engineer, East    $225,000-$275,000 OTE
+  Cresta Enterprise Solutions Engineer         $200,000-$275,000 OTE
+  Semgrep Sales Solutions Engineer             $152,000-$190,000 base, OTE to $272k
+  Tailscale Solutions Engineer x2              $150,000-$200,000 OTE
+  GitLab Support Engineer, US Government       $95,200-$160,800 base
+  GitLab Support Engineer (AMER)               $86,500-$146,400 base
