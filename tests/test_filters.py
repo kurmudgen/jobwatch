@@ -1179,6 +1179,29 @@ def test_geographic_zones_prefer_the_all_other_us_band():
     assert parsed["catchall_max"] == 251020
 
 
+def test_fde_titles_are_tier_2_by_construction_not_demotion():
+    """The seniority rule only gates tier 1 eligibility; it never pushes a
+    title down to tier 3. "Sr. Forward Deployed Engineer" is tier 2 because
+    that is where FDE belongs, seniority word or not."""
+    assert filters.match_seniority("Sr. Forward Deployed Engineer") == "sr"
+    assert filters.compute_tier("Sr. Forward Deployed Engineer") == 2
+    assert filters.compute_tier("Forward Deployed Engineer") == 2
+    assert filters.compute_tier("Senior Forward Deployed Engineer (AI Agent)") == 2
+    # And it survives the exclusion rules.
+    assert filters.match_exclude("Sr. Forward Deployed Engineer") is None
+
+
+def test_tier_2_lottery_picks_are_salary_parsed_too():
+    """The whole FDE ladder is tier 2; leaving it unparsed sorted every FDE
+    role below the tier 1 rows on date alone, whatever it paid."""
+    import salary, digest
+    rows = [lot(title="Sr. Forward Deployed Engineer", url="https://l/1",
+                description_text="Salary Range $182,000 - $250,208 USD")]
+    assert digest._tier(rows[0]) == 2
+    salary.enrich(rows, only=digest.is_lottery_pick)
+    assert rows[0]["salary_max"] == 250208
+
+
 def test_enrich_only_touches_the_postings_it_is_scoped_to():
     import salary
     rows = [
@@ -1190,7 +1213,7 @@ def test_enrich_only_touches_the_postings_it_is_scoped_to():
     import digest
     salary.enrich(rows, only=lambda p: digest.is_lottery_pick(p) and digest._tier(p) == 1)
     assert rows[0]["salary_max"] == 146400      # tier 1, parsed
-    assert rows[1].get("salary_max") is None    # tier 2, left alone
+    assert rows[1].get("salary_max") is None    # tier 2, outside this predicate
 
 
 def test_enrich_never_overwrites_a_published_salary():

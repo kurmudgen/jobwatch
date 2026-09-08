@@ -445,3 +445,31 @@ Top of the lottery list by pay, all US-remote:
   Tailscale Solutions Engineer x2              $150,000-$200,000 OTE
   GitLab Support Engineer, US Government       $95,200-$160,800 base
   GitLab Support Engineer (AMER)               $86,500-$146,400 base
+
+## 2026-09-08 — salary parsing extended to tier 2 lottery
+
+47. _enrich_lottery_salary now covers every lottery pick, not just tier 1.
+    Reason: the entire FDE ladder is tier 2. "Sr. Forward Deployed Engineer" is
+    tier 2 BY CONSTRUCTION - the seniority rule only gates tier 1 eligibility and
+    never demotes to tier 3 - so leaving tier 2 unparsed sorted every FDE role
+    below the tier 1 rows on date alone regardless of pay.
+    (I had claimed seniority was demoting FDE to tier 3 and offered to "exempt"
+    it. That was wrong; verified all 22 live FDE roles were already tier 2.)
+48. 280 tests passing.
+
+### FDE now ranks by real pay
+  Coinbase FDE x3 (Office of the CTO)   $218,025-$256,500
+  Databricks Sr. FDE x6                 $182,000-$250,208
+Both above every GitLab/Tailscale support band and just under the Cresta OTE.
+
+### LinkedIn: not possible, verified in the official docs
+robots.txt is "Disallow: /" for user-agent *, and the API is one-directional on
+jobs. Talent Solutions = Apply Connect, Apply with LinkedIn, Job Posting,
+Recruiter System Connect, CRM Connect - all employer/ATS facing. The Job Posting
+API INGESTS jobs to LinkedIn from ATSs and distributors; there is no
+candidate-side read/search endpoint anywhere on the platform. Jacob's existing
+posting credential is Consumer "Share on LinkedIn" (w_member_social), a
+different business line, and no addable scope grants job search because none
+exists for third parties.
+Aggregator alternatives tested for FDE coverage: arbeitnow 0, himalayas 0,
+remoteok 0, jobicy 1 (a LATAM engagement-manager role). Not worth a source.

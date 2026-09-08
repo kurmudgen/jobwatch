@@ -24,16 +24,15 @@ import verify as verify_mod
 
 
 def _enrich_lottery_salary(rows):
-    """Parse published pay for tier 1 lottery picks only.
+    """Parse published pay for every lottery pick, tier 1 and tier 2.
 
     Greenhouse has no pay field, but pay-transparency law puts the range in the
-    description prose. Scoped to tier 1 lottery because that is the short list
-    worth ranking by money.
+    description prose. Tier 2 is included because the whole FDE ladder lands
+    there - "Sr. Forward Deployed Engineer" is tier 2 by construction, not by
+    demotion - and leaving it unparsed sorted every FDE role below the tier 1
+    rows on date alone, regardless of what it paid.
     """
-    return salary_mod.enrich(
-        rows,
-        only=lambda p: digest.is_lottery_pick(p) and digest._tier(p) == 1,
-    )
+    return salary_mod.enrich(rows, only=digest.is_lottery_pick)
 
 
 def cmd_run(args) -> int:

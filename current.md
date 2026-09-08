@@ -1,7 +1,7 @@
-# jobwatch: matches from the last 60 days - 2026-09-06
+# jobwatch: matches from the last 90 days - 2026-09-08
 
-115 matches across 39 companies (17 flagged for manual review)
-Tier 1: 15 | Tier 2: 8 | Tier 3: 47 | Lottery: 45
+114 matches across 39 companies (17 flagged for manual review)
+Tier 1: 15 | Tier 2: 8 | Tier 3: 47 | Lottery: 44
 
 ## Tier 1 - core target (15)
 - **Anthropic - IT Support Engineer, Application Administrator**
@@ -229,12 +229,9 @@ Tier 1: 15 | Tier 2: 8 | Tier 3: 47 | Lottery: 45
   - FLAGS: `eligibility:not eligible` `states:california,colorado,hawaii,illinois,maryland,massachusetts,+5`
   - https://job-boards.greenhouse.io/twilio/jobs/8164891
 
-## Lottery (45)
+## Lottery (44)
 _tier 1 and 2 at lottery-tagged companies; salary first where published, otherwise newest_
 
-- **LaunchDarkly - Solutions Engineer - AI Focus**  [T1]
-  - $193,400 - $295,350 | Remote - US | posted 2026-07-10 | greenhouse | matched "solutions engineer" in title
-  - https://job-boards.greenhouse.io/launchdarkly/jobs/7800006003
 - **Cresta - Enterprise Solutions Engineer**  [T1]
   - $200,000 - $275,000 | United States (Remote) (US (Remote)) | Full-time | posted 2025-09-04 | greenhouse | matched "solutions engineer" in title
   - https://job-boards.greenhouse.io/cresta/jobs/4906900008
@@ -244,6 +241,73 @@ _tier 1 and 2 at lottery-tagged companies; salary first where published, otherwi
 - **Cresta - Solutions Engineer, AI Agent**  [T1]
   - $225,000 - $275,000 | United States (Remote) (US (Remote)) | Full-time | posted 2026-07-23 | greenhouse | matched "solutions engineer" in title
   - https://job-boards.greenhouse.io/cresta/jobs/5369032008
+- **Coinbase - Forward Deployed Engineer, Legal [Office of the CTO]**  [T2]
+  - $218,025 - $256,500 | Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-13 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `eligibility:excluding`
+  - https://www.coinbase.com/careers/positions/8060884?gh_jid=8060884
+- **Coinbase - Forward Deployed Engineer, Finance [Office of the CTO]**  [T2]
+  - $218,025 - $256,500 | Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-22 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `eligibility:excluding`
+  - https://www.coinbase.com/careers/positions/8072932?gh_jid=8072932
+- **Coinbase - Forward Deployed Engineer, Compliance [Office of the CTO]**  [T2]
+  - $218,025 - $256,500 | Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-31 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `eligibility:excluding`
+  - https://www.coinbase.com/careers/positions/8099099?gh_jid=8099099
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Communications, Media, Entertainment & Games**  [T2]
+  - $182,000 - $250,208 | Austin, Texas (Remote - Texas) | posted 2026-03-12 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8461219002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Healthcare & Life Sciences**  [T2]
+  - $182,000 - $250,208 | Dallas, Texas (Remote - California) | posted 2026-04-03 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8494144002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Manufacturing**  [T2]
+  - $182,000 - $250,208 | Seattle, Washington (Remote - Texas) | posted 2026-04-03 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8494156002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Digital Native Business**  [T2]
+  - $182,000 - $250,208 | Mountain View, California; San Francisco, California (Remote - California) | posted 2026-04-07 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8488399002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Financial Services**  [T2]
+  - $182,000 - $250,208 | Dallas, Texas (Remote - California) | posted 2026-06-22 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8592928002
+- **Databricks - Sr. Forward Deployed Engineer (FDE) - Retail**  [T2]
+  - $182,000 - $250,208 | Remote - California | posted 2026-07-23 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8647677002
+- **Databricks - Sr. Forward Deployed Engineer**  [T2]
+  - $182,000 - $250,208 | United States (Remote - California) | posted 2026-08-21 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8739484002
+- **Databricks - AI Engineer - FDE (Forward Deployed Engineer) - U.S. Federal Sector**  [T2]
+  - $182,000 - $250,208 | Maryland; Virginia; Washington, D.C. (Remote - Washington D.C.) | posted 2026-08-28 | greenhouse | matched "deployed engineer" in title
+  - FLAGS: `states:maryland,virginia,washington` `clearance:clearance,secret`
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8760167002
+- **Instacart - Senior Software Engineer II, Marketing Enablement & Technology**  [T2]
+  - $211,000 - $242,500 | United States - Remote (Remote - Canada, Remote - United States) | Regular | posted 2026-08-19 | greenhouse | matched "software engineer ii" in lottery title
+  - https://instacart.careers/job/?gh_jid=8141533
+- **Instacart - Senior Software Engineer II, AI Labs & Foundations**  [T2]
+  - $211,000 - $242,500 | United States - Remote (Remote - United States) | Regular | posted 2026-09-02 | greenhouse | matched "software engineer ii" in lottery title
+  - https://instacart.careers/job/?gh_jid=8053797
+- **Cresta - Senior Forward Deployed Engineer (AI Agent)**  [T2]
+  - $185,000 - $235,000 | United States (Remote) (US (Remote)) | Full-time | posted 2025-06-12 | greenhouse | matched "deployed engineer" in title
+  - https://job-boards.greenhouse.io/cresta/jobs/4759347008
+- **Affirm - Software Engineer II, Fullstack (App Experience)**  [T2]
+  - $146,000 - $225,000 | Remote US | posted 2026-08-21 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7819445003
+- **Affirm - Software Engineer II, Backend (Post-Transaction)**  [T2]
+  - $146,000 - $225,000 | Remote US | posted 2026-09-04 | greenhouse | matched "software engineer ii" in lottery title
+  - https://job-boards.greenhouse.io/affirm/jobs/7981803003
+- **Abnormal Security - Software Engineer II - Full Stack**  [T2]
+  - $149,200 - $214,500 | Remote - USA | posted 2026-06-30 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7786309003?gh_jid=7786309003
+- **Abnormal Security - Software Engineer II, Model Platform**  [T2]
+  - $149,200 - $214,500 | Remote - USA | posted 2026-08-07 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7829979003?gh_jid=7829979003
+- **Abnormal Security - Software Engineer II - Dev Accelerator**  [T2]
+  - $149,200 - $214,500 | Remote - USA | posted 2026-08-25 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7967606003?gh_jid=7967606003
+- **Abnormal Security - Software Engineer II - Data Security**  [T2]
+  - $149,200 - $214,500 | Remote - USA | posted 2026-08-31 | greenhouse | matched "software engineer ii" in lottery title
+  - https://abnormal.ai/careers/jobs/7981482003?gh_jid=7981482003
+- **Databricks - AI Engineer - FDE (Forward Deployed Engineer)**  [T2]
+  - $152,900 - $210,155 | United States (Remote - California) | posted 2026-05-13 | greenhouse | matched "deployed engineer" in title
+  - https://databricks.com/company/careers/open-positions/job?gh_jid=8546367002
 - **Tailscale - Solutions Engineer - Commercial (Expansion Sales)**  [T1]
   - $150,000 - $200,000 | Remote (United States) (Remote (Canada)) | Full-time | posted 2026-07-28 | greenhouse | matched "solutions engineer" in title
   - https://job-boards.greenhouse.io/tailscale/jobs/4715836005
@@ -272,30 +336,12 @@ _tier 1 and 2 at lottery-tagged companies; salary first where published, otherwi
 - **Cresta - Customer Engineer**  [T2]
   - United States (Remote) (US (Remote)) | Full-time | posted 2024-09-10 | greenhouse | matched "customer engineer" in title
   - https://job-boards.greenhouse.io/cresta/jobs/4122946008
-- **Cresta - Senior Forward Deployed Engineer (AI Agent)**  [T2]
-  - United States (Remote) (US (Remote)) | Full-time | posted 2025-06-12 | greenhouse | matched "deployed engineer" in title
-  - https://job-boards.greenhouse.io/cresta/jobs/4759347008
-- **Databricks - Sr. Forward Deployed Engineer (FDE) - Communications, Media, Entertainment & Games**  [T2]
-  - Austin, Texas (Remote - Texas) | posted 2026-03-12 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8461219002
-- **Databricks - Sr. Forward Deployed Engineer (FDE) - Healthcare & Life Sciences**  [T2]
-  - Dallas, Texas (Remote - California) | posted 2026-04-03 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8494144002
-- **Databricks - Sr. Forward Deployed Engineer (FDE) - Manufacturing**  [T2]
-  - Seattle, Washington (Remote - Texas) | posted 2026-04-03 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8494156002
-- **Databricks - Sr. Forward Deployed Engineer (FDE) - Digital Native Business**  [T2]
-  - Mountain View, California; San Francisco, California (Remote - California) | posted 2026-04-07 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8488399002
 - **GitLab - Forward Deployed Engineer, AI and Agentic SDLC**  [T2]
   - Remote, United States (United States of America) | posted 2026-05-06 | greenhouse | matched "deployed engineer" in title
   - https://job-boards.greenhouse.io/gitlab/jobs/8517171002
 - **Confluent - Senior Software Engineer II**  [T2]
   - Boston, Massachusetts, Chicago, Illinois, Remote, North Carolina, Dallas, Texas, Portland, Oregon | FullTime | posted 2026-05-07 | ashby | matched "software engineer ii" in lottery title
   - https://jobs.ashbyhq.com/confluent/0b65c19f-c804-4f79-b1e3-c3ea035c3d76
-- **Databricks - AI Engineer - FDE (Forward Deployed Engineer)**  [T2]
-  - United States (Remote - California) | posted 2026-05-13 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8546367002
 - **Pinterest - Software Engineer II, Big Data, tvScientific**  [T2]
   - San Francisco, CA, US; Remote, US (Palo Alto) | Regular | posted 2026-05-28 | greenhouse | matched "software engineer ii" in lottery title
   - FLAGS: `eligibility:not eligible`
@@ -306,12 +352,6 @@ _tier 1 and 2 at lottery-tagged companies; salary first where published, otherwi
 - **Affirm - Software Engineer II, Back-end (Card Mgmt & Transaction Processing)**  [T2]
   - Remote US (Remote Canada) | posted 2026-06-18 | greenhouse | matched "software engineer ii" in lottery title
   - https://job-boards.greenhouse.io/affirm/jobs/7766277003
-- **Databricks - Sr. Forward Deployed Engineer (FDE) - Financial Services**  [T2]
-  - Dallas, Texas (Remote - California) | posted 2026-06-22 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8592928002
-- **Abnormal Security - Software Engineer II - Full Stack**  [T2]
-  - Remote - USA | posted 2026-06-30 | greenhouse | matched "software engineer ii" in lottery title
-  - https://abnormal.ai/careers/jobs/7786309003?gh_jid=7786309003
 - **Pinterest - Security Software Engineer II, Detection and Response**  [T2]
   - San Francisco, CA, US; Remote, US | Regular | posted 2026-07-02 | greenhouse | matched "software engineer ii" in lottery title
   - FLAGS: `eligibility:not eligible`
@@ -319,59 +359,16 @@ _tier 1 and 2 at lottery-tagged companies; salary first where published, otherwi
 - **Affirm - Software Engineer II, Backend (Test Infra)**  [T2]
   - Remote US (Remote Canada) | posted 2026-07-10 | greenhouse | matched "software engineer ii" in lottery title
   - https://job-boards.greenhouse.io/affirm/jobs/7727320003
-- **Coinbase - Forward Deployed Engineer, Legal [Office of the CTO]**  [T2]
-  - Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-13 | greenhouse | matched "deployed engineer" in title
-  - FLAGS: `eligibility:excluding`
-  - https://www.coinbase.com/careers/positions/8060884?gh_jid=8060884
-- **Coinbase - Forward Deployed Engineer, Finance [Office of the CTO]**  [T2]
-  - Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-22 | greenhouse | matched "deployed engineer" in title
-  - FLAGS: `eligibility:excluding`
-  - https://www.coinbase.com/careers/positions/8072932?gh_jid=8072932
-- **Databricks - Sr. Forward Deployed Engineer (FDE) - Retail**  [T2]
-  - Remote - California | posted 2026-07-23 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8647677002
-- **Coinbase - Forward Deployed Engineer, Compliance [Office of the CTO]**  [T2]
-  - Remote - USA (US - Remote Zone 1 (Job Requisitions Only)) | posted 2026-07-31 | greenhouse | matched "deployed engineer" in title
-  - FLAGS: `eligibility:excluding`
-  - https://www.coinbase.com/careers/positions/8099099?gh_jid=8099099
-- **Abnormal Security - Software Engineer II, Model Platform**  [T2]
-  - Remote - USA | posted 2026-08-07 | greenhouse | matched "software engineer ii" in lottery title
-  - https://abnormal.ai/careers/jobs/7829979003?gh_jid=7829979003
 - **Tailscale - Forward Deployed Engineer**  [T2]
   - Remote (Canada) (Remote (United States)) | Full-time | posted 2026-08-17 | greenhouse | matched "deployed engineer" in title
   - https://job-boards.greenhouse.io/tailscale/jobs/4724854005
-- **Instacart - Senior Software Engineer II, Marketing Enablement & Technology**  [T2]
-  - United States - Remote (Remote - Canada, Remote - United States) | Regular | posted 2026-08-19 | greenhouse | matched "software engineer ii" in lottery title
-  - https://instacart.careers/job/?gh_jid=8141533
 - **Tailscale - Customer Support Engineer (Tier 1)**  [T1]
   - Remote (Canada) (Remote (United States)) | Full-time | posted 2026-08-19 | greenhouse | matched "customer support engineer" in title
   - https://job-boards.greenhouse.io/tailscale/jobs/4724307005
-- **Affirm - Software Engineer II, Fullstack (App Experience)**  [T2]
-  - Remote US | posted 2026-08-21 | greenhouse | matched "software engineer ii" in lottery title
-  - https://job-boards.greenhouse.io/affirm/jobs/7819445003
-- **Databricks - Sr. Forward Deployed Engineer**  [T2]
-  - United States (Remote - California) | posted 2026-08-21 | greenhouse | matched "deployed engineer" in title
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8739484002
-- **Abnormal Security - Software Engineer II - Dev Accelerator**  [T2]
-  - Remote - USA | posted 2026-08-25 | greenhouse | matched "software engineer ii" in lottery title
-  - https://abnormal.ai/careers/jobs/7967606003?gh_jid=7967606003
-- **Databricks - AI Engineer - FDE (Forward Deployed Engineer) - U.S. Federal Sector**  [T2]
-  - Maryland; Virginia; Washington, D.C. (Remote - Washington D.C.) | posted 2026-08-28 | greenhouse | matched "deployed engineer" in title
-  - FLAGS: `states:maryland,virginia,washington` `clearance:clearance,secret`
-  - https://databricks.com/company/careers/open-positions/job?gh_jid=8760167002
-- **Abnormal Security - Software Engineer II - Data Security**  [T2]
-  - Remote - USA | posted 2026-08-31 | greenhouse | matched "software engineer ii" in lottery title
-  - https://abnormal.ai/careers/jobs/7981482003?gh_jid=7981482003
 - **Tines - Senior Forward Deployed Engineer - West**  [T2]
   - North America (Remote) | posted 2026-09-02 | greenhouse | matched "deployed engineer" in title
   - https://job-boards.greenhouse.io/tines/jobs/6141304004
-- **Instacart - Senior Software Engineer II, AI Labs & Foundations**  [T2]
-  - United States - Remote (Remote - United States) | Regular | posted 2026-09-02 | greenhouse | matched "software engineer ii" in lottery title
-  - https://instacart.careers/job/?gh_jid=8053797
 - **Affirm - Software Engineer II**  [T2]
   - Remote Canada (Remote US) | posted 2026-09-04 | greenhouse | matched "software engineer ii" in lottery title
   - https://job-boards.greenhouse.io/affirm/jobs/7981805003
-- **Affirm - Software Engineer II, Backend (Post-Transaction)**  [T2]
-  - Remote US | posted 2026-09-04 | greenhouse | matched "software engineer ii" in lottery title
-  - https://job-boards.greenhouse.io/affirm/jobs/7981803003
 

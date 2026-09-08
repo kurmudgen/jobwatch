@@ -337,9 +337,15 @@ Ordering is salary max first, then newest.
 
 **Greenhouse publishes no pay field** — zero populated pay metadata across
 Databricks, Coinbase, Roblox, Pinterest and GitLab — but US pay-transparency law
-puts the range in the description prose, so `salary.py` parses it out. That runs
-for **tier 1 lottery picks only**, which is the short list actually worth
-ranking by money; it read a range from 13 of 13 on the first pass.
+puts the range in the description prose, so `salary.py` parses it out. It runs
+for every lottery pick, tier 1 and tier 2, and read a range from 13 of 13 tier 1
+postings on the first pass.
+
+Tier 2 is included because **the whole forward-deployed ladder lands there**.
+"Sr. Forward Deployed Engineer" is tier 2 by construction, not by demotion — the
+seniority rule only gates tier 1 eligibility and never pushes a title down to
+tier 3. Leaving tier 2 unparsed sorted every FDE role below the tier 1 rows on
+date alone, whatever it paid.
 
 Every rule in the parser came from a real posting:
 
