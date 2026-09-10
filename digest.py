@@ -18,7 +18,8 @@ def _tier(posting: dict) -> int:
     if tier in (1, 2, 3):
         return tier
     return compute_tier(posting.get("title") or "",
-                        lottery=bool(posting.get("lottery")))
+                        lottery=bool(posting.get("lottery")),
+                        defense=bool(posting.get("defense")))
 
 
 def _group_by_company(postings: "list[dict]") -> "list[tuple[str, list[dict]]]":

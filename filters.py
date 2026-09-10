@@ -39,6 +39,21 @@ LOTTERY_TITLE_KEYWORDS = [
     "swe ii",
 ]
 
+# Accepted ONLY from companies tagged defense: true. "AI Engineer" means two
+# different jobs depending on sector: at Anthropic or OpenAI it is senior ML
+# research, which is why it was removed from the general list; at GDIT or Shield
+# AI it is integration work on someone else's mission system. Same words,
+# opposite role, so the title list has to be scoped rather than global.
+DEFENSE_TITLE_KEYWORDS = [
+    "ai engineer",
+    "ai/ml engineer",
+    "ml engineer",
+    "machine learning engineer",
+    "applied ai engineer",
+    "artificial intelligence engineer",
+    "autonomy engineer",
+]
+
 # Deliberately NOT included: "ai engineer" / "applied ai engineer". At these
 # companies those titles are senior ML research and modelling roles, not the
 # customer-facing engineering this list is for.
@@ -120,6 +135,7 @@ def _phrase_re(phrase: str) -> "re.Pattern[str]":
 
 _INCLUDE_RES = {k: _phrase_re(k) for k in INCLUDE_TITLE_KEYWORDS}
 _LOTTERY_RES = {k: _phrase_re(k) for k in LOTTERY_TITLE_KEYWORDS}
+_DEFENSE_RES = {k: _phrase_re(k) for k in DEFENSE_TITLE_KEYWORDS}
 _EXCLUDE_RES = {k: _phrase_re(k) for k in EXCLUDE_TITLE_KEYWORDS}
 _ONSITE_RES = {k: _phrase_re(k) for k in ONSITE_KEYWORDS}
 _ELIGIBILITY_RES = {k: _phrase_re(k) for k in ELIGIBILITY_PHRASES}
@@ -149,6 +165,15 @@ def match_lottery_include(text: str) -> "str | None":
     norm = normalize(text)
     for kw in sorted(LOTTERY_TITLE_KEYWORDS, key=len, reverse=True):
         if _LOTTERY_RES[kw].search(norm):
+            return kw
+    return None
+
+
+def match_defense_include(text: str) -> "str | None":
+    """Defense-only titles. Never consulted for a non-defense company."""
+    norm = normalize(text)
+    for kw in sorted(DEFENSE_TITLE_KEYWORDS, key=len, reverse=True):
+        if _DEFENSE_RES[kw].search(norm):
             return kw
     return None
 
@@ -370,8 +395,20 @@ def filter_open(postings: "Iterable[dict]", today=None) -> "list[dict]":
     return [p for p in postings if is_open(p, today=today)]
 
 
-def filter_us_remote(postings: "Iterable[dict]") -> "list[dict]":
-    return [p for p in postings if is_us_remote(p.get("location") or "")]
+def filter_us_remote(postings: "Iterable[dict]",
+                     allow_onsite_defense: bool = False) -> "list[dict]":
+    """Drop anything that is not US-remote.
+
+    Cleared work is overwhelmingly duty-station bound - sampling Shield AI,
+    Saronic, Two Six and Epirus found 55 AI/ML-titled roles between them and
+    zero that were US-remote - so `allow_onsite_defense` lets defense-tagged
+    companies through regardless, for when a duty station is acceptable.
+    """
+    return [
+        p for p in postings
+        if is_us_remote(p.get("location") or "")
+        or (allow_onsite_defense and p.get("defense"))
+    ]
 
 
 # --- dedupe -----------------------------------------------------------------
@@ -493,7 +530,7 @@ def match_seniority(title: str) -> "str | None":
     return None
 
 
-def compute_tier(title: str, lottery: bool = False) -> int:
+def compute_tier(title: str, lottery: bool = False, defense: bool = False) -> int:
     """1, 2 or 3. Tier 1 requires a core keyword AND no seniority word.
 
     A lottery SWE title is tier 2 rather than tier 3 on purpose: the Lottery
@@ -506,6 +543,8 @@ def compute_tier(title: str, lottery: bool = False) -> int:
     if any(rx.search(norm) for rx in _TIER2_RES):
         return 2
     if lottery and match_lottery_include(title):
+        return 2
+    if defense and match_defense_include(title):
         return 2
     return 3
 
@@ -561,6 +600,9 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     if not keyword and is_lottery:
         keyword = match_lottery_include(title)
         matched_in = "lottery title" if keyword else None
+    if not keyword and posting.get("defense"):
+        keyword = match_defense_include(title)
+        matched_in = "defense title" if keyword else None
     if not keyword and match_description:
         keyword = match_include(description)
         matched_in = "description" if keyword else None
@@ -587,7 +629,8 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     result["matched_keyword"] = keyword
     result["matched_in"] = matched_in
     result["flags"] = compute_flags(description)
-    result["tier"] = compute_tier(title, lottery=is_lottery)
+    result["tier"] = compute_tier(title, lottery=is_lottery,
+                                  defense=bool(posting.get("defense")))
     result["remote"] = looks_remote(location, description, posting.get("remote"))
     result.pop("reject_reason", None)
     return result

@@ -1231,3 +1231,82 @@ def test_enrich_does_not_store_a_foreign_currency_as_if_it_were_usd():
     salary.enrich(rows)
     assert rows[0].get("salary_max") is None
     assert "CAD" in rows[0]["salary_note"]
+
+
+# --- defense scoping -------------------------------------------------------
+
+def dfn(**kwargs):
+    base = dict(posting(source="greenhouse", company="GDIT",
+                        title="AI Engineer", location="Reston, VA",
+                        url="https://d/1"))
+    base["defense"] = True
+    base.update(kwargs)
+    return base
+
+
+@pytest.mark.parametrize("title,expected", [
+    ("AI Engineer, Mission Systems", "ai engineer"),
+    ("Machine Learning Engineer (TS/SCI)", "machine learning engineer"),
+    ("Senior AI Engineer - Defense", "ai engineer"),
+    ("Artificial Intelligence Engineer", "artificial intelligence engineer"),
+    ("Autonomy Engineer", "autonomy engineer"),
+])
+def test_defense_titles_match_only_for_defense_companies(title, expected):
+    """"AI Engineer" is senior ML research at Anthropic and integration work at
+    GDIT. Same words, opposite role, so the list has to be scoped."""
+    assert filters.match_include(title) is None
+    assert filters.match_defense_include(title) == expected
+    kept = filters.evaluate(dfn(title=title))
+    assert kept is not None and kept["matched_in"] == "defense title"
+    assert filters.evaluate(dfn(title=title, defense=False)) is None
+
+
+def test_defense_titles_are_tier_2():
+    assert filters.compute_tier("AI Engineer", defense=True) == 2
+    assert filters.compute_tier("AI Engineer") == 3
+    assert filters.evaluate(dfn())["tier"] == 2
+
+
+def test_defense_exclusions_still_apply():
+    assert filters.evaluate(dfn(title="Principal AI Engineer")) is None
+    assert filters.evaluate(dfn(title="AI Engineering Manager")) is None
+    assert filters.evaluate(dfn(title="Contract AI Engineer")) is None
+
+
+def test_a_plain_software_title_is_not_rescued_by_the_defense_tag():
+    assert filters.evaluate(dfn(title="Software Engineer")) is None
+    assert filters.evaluate(dfn(title="Systems Administrator")) is None
+
+
+def test_onsite_defense_is_opt_in():
+    """Cleared work is duty-station bound; the default must not flood with it."""
+    batch = [
+        dfn(url="https://d/1", location="Reston, VA"),
+        dfn(url="https://d/2", location="Remote - US"),
+        posting(url="https://x/1", location="Austin, TX"),
+    ]
+    strict = filters.filter_us_remote(batch)
+    assert [p["url"] for p in strict] == ["https://d/2"]
+    loose = filters.filter_us_remote(batch, allow_onsite_defense=True)
+    assert [p["url"] for p in loose] == ["https://d/1", "https://d/2"]
+    # A non-defense on-site posting is never let through.
+    assert "https://x/1" not in [p["url"] for p in loose]
+
+
+def test_the_defense_flag_survives_the_database(tmp_path):
+    import store, digest
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [dfn(title="AI Engineer", url="https://d/9")])
+        row = store.recent(conn, days=1)[0]
+        assert row["defense"] is True
+        assert digest._tier(row) == 2
+    finally:
+        conn.close()
+
+
+def test_defense_workday_queries_are_additive():
+    import sources
+    assert set(sources.WORKDAY_QUERIES) < set(
+        sources.WORKDAY_QUERIES + sources.WORKDAY_DEFENSE_QUERIES)
+    assert "artificial intelligence" in sources.WORKDAY_DEFENSE_QUERIES

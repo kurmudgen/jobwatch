@@ -41,6 +41,9 @@ FIELDS = (
     "closes_at",
     # True when the company is tagged lottery: true in companies.yaml.
     "lottery",
+    # True when the company is tagged defense: true. Scopes the AI/ML title
+    # list, which means something different in this sector.
+    "defense",
 )
 
 
@@ -698,6 +701,16 @@ WORKDAY_DETAIL_URL = "https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/
 WORKDAY_PUBLIC_URL = "https://{tenant}.{wd}.myworkdayjobs.com/{site}{path}"
 
 WORKDAY_QUERIES = ("Anthropic", "forward deployed", "Claude", "solutions engineer")
+
+# Extra searches for defense-tagged tenants. GDIT alone returns 1,172 hits for
+# "artificial intelligence" and exactly one for the four generic queries above,
+# because cleared AI work is never titled "solutions engineer".
+WORKDAY_DEFENSE_QUERIES = (
+    "artificial intelligence",
+    "machine learning",
+    "AI engineer",
+    "data scientist",
+)
 WORKDAY_PAGE_SIZE = 20      # the API's hard cap
 WORKDAY_MAX_PAGES = 3       # 60 rows per query; deeper is fuzzy-match noise
 WORKDAY_JSON_HEADERS = {
@@ -799,7 +812,8 @@ def _workday_search(tenant, wd, site, company, query):
     return rows
 
 
-def fetch_workday(slug: str, company: str, enrich: bool = True) -> "list[dict]":
+def fetch_workday(slug: str, company: str, enrich: bool = True,
+                  defense: bool = False) -> "list[dict]":
     """Four searches, de-duplicated on URL.
 
     Descriptions cost one request per posting, so only rows whose title already
@@ -809,8 +823,9 @@ def fetch_workday(slug: str, company: str, enrich: bool = True) -> "list[dict]":
     """
     tenant, wd, site = parse_workday_slug(slug)
     seen, rows, failures = set(), [], []
+    queries = WORKDAY_QUERIES + (WORKDAY_DEFENSE_QUERIES if defense else ())
 
-    for query in WORKDAY_QUERIES:
+    for query in queries:
         try:
             found = _workday_search(tenant, wd, site, company, query)
         except Exception as exc:  # noqa: BLE001 - one query must not kill the rest
@@ -822,16 +837,20 @@ def fetch_workday(slug: str, company: str, enrich: bool = True) -> "list[dict]":
         rows.extend(new)
         log.info("workday %s %r: %d rows, %d new", company, query, len(found), len(new))
 
-    if failures and len(failures) == len(WORKDAY_QUERIES):
+    if failures and len(failures) == len(queries):
         raise RuntimeError("every workday search failed for " + company)
 
     if enrich:
         # Imported here rather than at module scope to keep sources.py free of a
         # hard dependency on the filter rules.
-        from filters import match_include
+        from filters import match_defense_include, match_include
 
         for row in rows:
-            if not match_include(row["title"]):
+            # Defense-titled rows need enriching too, or they never get a
+            # description and so never get a clearance flag.
+            if not match_include(row["title"]) and not (
+                defense and match_defense_include(row["title"])
+            ):
                 continue
             path = row["url"].split(site, 1)[-1] if site in row["url"] else ""
             if not path:
@@ -966,10 +985,14 @@ def collect(companies, boards=None, skip_unverified=True):
             errors.append((label, "unknown ats: " + str(ats)))
             continue
         try:
-            found = fetcher(slug, name)
-            if entry.get("lottery"):
-                for row in found:
-                    row["lottery"] = True
+            if ats == "workday":
+                found = fetcher(slug, name, defense=bool(entry.get("defense")))
+            else:
+                found = fetcher(slug, name)
+            for tag in ("lottery", "defense"):
+                if entry.get(tag):
+                    for row in found:
+                        row[tag] = True
             log.info("%s: %d postings", label, len(found))
             postings.extend(found)
         except Exception as exc:  # noqa: BLE001 - one source must not kill the run

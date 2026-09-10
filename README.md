@@ -374,6 +374,28 @@ The flag is stored on the posting, not just the company, because tier is derived
 at render time: a SWE title read back from SQLite without it recomputes as tier
 3 and silently drops out of the section.
 
+## Defense / cleared
+
+Companies tagged `defense: true` in `companies.yaml` get two changes:
+
+- **Scoped AI/ML titles.** `ai engineer`, `ml engineer`, `machine learning
+  engineer`, `artificial intelligence engineer`, `autonomy engineer` and
+  `applied ai engineer` count as matches, but *only* at those companies. The
+  same words mean two different jobs: at Anthropic or OpenAI "AI Engineer" is
+  senior ML research, which is why it was cut from the general list; at GDIT or
+  Shield AI it is integration work on someone else's mission system. They tier
+  as 2.
+- **Extra Workday searches.** Defense tenants also get searched for "artificial
+  intelligence", "machine learning", "AI engineer" and "data scientist". GDIT
+  returns 1,172 hits for the first of those and exactly one for the four generic
+  queries, because cleared AI work is never titled "solutions engineer".
+
+**`--onsite-defense` lets defense companies bypass the US-remote filter.** It is
+off by default and should stay off unless a duty station is acceptable, because
+the measurement is stark: of 61 defense-company matches, **4** are US-remote.
+Sampling Shield AI, Saronic, Two Six and Epirus found 55 AI/ML-titled roles
+between them and **zero** US-remote. Cleared work happens in a SCIF.
+
 ## Tiers
 
 Every match is assigned a tier, shown in the digest and used to sort it:

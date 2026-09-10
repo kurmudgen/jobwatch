@@ -175,53 +175,63 @@ companies:
   ats: greenhouse
   slug: scaleai
   status: verified
+  defense: true
 - name: Palantir
   ats: lever
   slug: palantir
   status: verified
+  defense: true
 - name: Anduril
   ats: greenhouse
   slug: andurilindustries
   status: verified
+  defense: true
 - name: Shield AI
-  ats: greenhouse
-  slug: shieldai
-  status: unverified
-  note: no working slug; tried shieldai=HTTP 404, shield-ai=HTTP 404, shield=wrong company
+  ats: ashby
+  slug: shield-ai
+  status: verified
+  defense: true
 - name: Second Front
   ats: greenhouse
   slug: secondfrontsystems
   status: unverified
   note: no working slug; tried secondfrontsystems=HTTP 404, secondfront=HTTP 404, second-front=HTTP 404,
     second=HTTP 404
+  defense: true
 - name: Rebellion Defense
   ats: greenhouse
   slug: rebelliondefense
   status: verified
+  defense: true
 - name: Vannevar Labs
   ats: greenhouse
   slug: vannevarlabs
   status: verified
+  defense: true
 - name: Govini
   ats: greenhouse
   slug: govini
   status: unverified
   note: no working slug; tried govini=HTTP 404
+  defense: true
 - name: Chainguard
   ats: greenhouse
   slug: chainguard
   status: verified
+  defense: true
 - name: Booz Allen Hamilton
   ats: workday
   slug: bah/wd1/BAH_Jobs
   status: verified
   note: discovered from careers.boozallen.com; 2000 jobs on the search endpoint
+  defense: true
 - name: Accenture
   ats: workday
   slug: accenture/wd103/AccentureCareers
   status: verified
   note: Accenture Federal Services has no separate public board (afs.accenture.com does not resolve);
     AFS roles post here
+  defense: true
 - name: Slalom
   ats: avature
   slug: jobs.slalom.com/en_US/careersmarketplace
@@ -620,3 +630,33 @@ companies:
   status: verified
   lottery: true
   note: lottery tier, discovered 2026-09-05
+- name: GDIT
+  ats: workday
+  slug: gdit/wd5/External_Career_Site
+  status: verified
+  defense: true
+  note: cleared/defense, discovered 2026-09-09
+- name: Saronic
+  ats: ashby
+  slug: saronic
+  status: verified
+  defense: true
+  note: cleared/defense, discovered 2026-09-09
+- name: Two Six Technologies
+  ats: greenhouse
+  slug: twosixtechnologies
+  status: verified
+  defense: true
+  note: cleared/defense, discovered 2026-09-09
+- name: Epirus
+  ats: greenhouse
+  slug: epirus
+  status: verified
+  defense: true
+  note: cleared/defense, discovered 2026-09-09
+- name: Primer
+  ats: greenhouse
+  slug: primerai
+  status: verified
+  defense: true
+  note: cleared/defense, discovered 2026-09-09

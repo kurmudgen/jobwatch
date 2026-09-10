@@ -65,7 +65,8 @@ def cmd_run(args) -> int:
         log.info("closing-date filter: %d -> %d", n_matched, len(matches))
     n_open = len(matches)
     if args.us_remote:
-        matches = filters.filter_us_remote(matches)
+        matches = filters.filter_us_remote(
+            matches, allow_onsite_defense=args.onsite_defense)
         log.info("us-remote filter: %d -> %d", n_open, len(matches))
     n_us_remote = len(matches)
     matches = filters.dedupe(matches)
@@ -125,7 +126,8 @@ def cmd_list(args) -> int:
     if not args.include_closed:
         rows = filters.filter_open(rows)
     if args.us_remote:
-        rows = filters.filter_us_remote(rows)
+        rows = filters.filter_us_remote(
+            rows, allow_onsite_defense=args.onsite_defense)
     rows = filters.dedupe(rows)
     if args.only_tier:
         rows = [r for r in rows if filters.compute_tier(r.get("title") or "") == args.only_tier]
@@ -181,7 +183,8 @@ def cmd_forms(args) -> int:
     rows = [r for r in rows if not r.get("applied_at")]
     rows = filters.filter_open(rows)
     if args.us_remote:
-        rows = filters.filter_us_remote(rows)
+        rows = filters.filter_us_remote(
+            rows, allow_onsite_defense=args.onsite_defense)
     rows = filters.dedupe(rows)
     if args.only_tier:
         rows = [r for r in rows
@@ -300,6 +303,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="emit the digest as HTML (used when sending via the Gmail connector)",
     )
     run.add_argument(
+        "--onsite-defense",
+        action="store_true",
+        help="let defense-tagged companies through the US-remote filter "
+             "(cleared work is almost always duty-station bound)",
+    )
+    run.add_argument(
         "--include-closed",
         action="store_true",
         help="keep postings whose application deadline has passed (default: drop)",
@@ -321,6 +330,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     listing.add_argument(
         "--html", action="store_true", help="emit the digest as HTML"
+    )
+    listing.add_argument(
+        "--onsite-defense",
+        action="store_true",
+        help="let defense-tagged companies through the US-remote filter "
+             "(cleared work is almost always duty-station bound)",
     )
     listing.add_argument(
         "--include-applied",
