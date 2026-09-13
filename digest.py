@@ -173,13 +173,19 @@ def _money(value):
 
 
 def _salary_text(posting) -> str:
+    """An OTE figure includes variable pay and is not comparable to a base
+    figure. It must never be rendered as though it were one."""
     low, high = posting.get("salary_min"), posting.get("salary_max")
+    kind = (posting.get("salary_kind") or "").lower()
+    suffix = " OTE" if kind == "ote" else (" base" if kind == "base" else "")
+    years = posting.get("years_required")
+    tail = ("  [" + str(years) + "+ yrs]") if years and years >= 5 else ""
     if high and low:
-        return _money(low) + " - " + _money(high)
+        return _money(low) + " - " + _money(high) + suffix + tail
     if high:
-        return "up to " + _money(high)
+        return "up to " + _money(high) + suffix + tail
     if low:
-        return "from " + _money(low)
+        return "from " + _money(low) + suffix + tail
     return "salary not published"
 
 

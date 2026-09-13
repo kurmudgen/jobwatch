@@ -1310,3 +1310,108 @@ def test_defense_workday_queries_are_additive():
     assert set(sources.WORKDAY_QUERIES) < set(
         sources.WORKDAY_QUERIES + sources.WORKDAY_DEFENSE_QUERIES)
     assert "artificial intelligence" in sources.WORKDAY_DEFENSE_QUERIES
+
+
+# --- seniority declared in the body, not the title -------------------------
+
+def test_a_posting_that_calls_itself_principal_is_excluded():
+    """Cresta's "Solutions Engineer, AI Agent" opens "As a Principal Solutions
+    Engineer, AI Agent you will...". The title-level rules never see it."""
+    body = ("About the role: As a Principal Solutions Engineer, AI Agent you "
+            "will serve as the dedicated expert on AI Agent technology.")
+    assert filters.match_exclude("Solutions Engineer, AI Agent") is None
+    assert filters.match_body_seniority(body) == "principal"
+    assert filters.evaluate(posting(title="Solutions Engineer, AI Agent",
+                                    description_text=body)) is None
+
+
+@pytest.mark.parametrize("phrase,expected", [
+    ("As a Principal Solutions Engineer you will", "principal"),
+    ("As a Staff Forward Deployed Engineer focused on AI", "staff"),
+    ("As a Director of Solutions you will", "director"),
+    ("As a Senior Director you will", "senior director"),
+    ("As a VP of Engineering", "vp"),
+    ("As a Head of Support", "head"),
+])
+def test_body_seniority_phrases(phrase, expected):
+    assert filters.match_body_seniority(phrase) == expected
+
+
+def test_body_seniority_only_looks_near_the_top():
+    """A passing mention deep in the benefits text must not disqualify a role.
+    GitLab declares its level at char 1787, so the window has to reach that."""
+    assert filters.match_body_seniority("x" * 1800 + " As a Staff Engineer") == "staff"
+    assert filters.match_body_seniority("x" * 4000 + " As a Staff Engineer") is None
+
+
+def test_ordinary_descriptions_are_untouched():
+    for body in ["You will report to a Principal Engineer.",
+                 "Our staff are distributed globally.",
+                 "As a member of the support team you will",
+                 "As a Solutions Engineer you will", ""]:
+        assert filters.match_body_seniority(body) is None
+
+
+# --- years of experience ---------------------------------------------------
+
+@pytest.mark.parametrize("body,expected", [
+    ("5+ years in a customer-facing technical role, with 3-5 years in pre-sales", 5),
+    ("at least 8 years of experience", 8),
+    ("2+ years", 2),
+    ("no requirement stated", None),
+    ("we have been around for 200 years", None),   # out of plausible range
+])
+def test_required_years(body, expected):
+    assert filters.required_years(body) == expected
+
+
+# --- OTE must never be shown as base ---------------------------------------
+
+def test_the_digest_labels_ote_and_base_differently():
+    import digest
+    ote = federal(salary_min=220000.0, salary_max=275000.0, salary_kind="ote")
+    base = federal(salary_min=220000.0, salary_max=275000.0, salary_kind="base")
+    assert "OTE" in digest._salary_text(ote)
+    assert "base" in digest._salary_text(base)
+    assert digest._salary_text(ote) != digest._salary_text(base)
+
+
+def test_an_unlabelled_salary_makes_no_claim():
+    import digest
+    assert digest._salary_text(federal(salary_min=1.0, salary_max=2.0,
+                                       salary_kind=None)).endswith("$2")
+
+
+def test_a_heavy_experience_requirement_is_surfaced():
+    import digest
+    row = federal(salary_min=200000.0, salary_max=275000.0,
+                  salary_kind="ote", years_required=8)
+    assert "[8+ yrs]" in digest._salary_text(row)
+    # A modest requirement is not worth the noise.
+    assert "yrs]" not in digest._salary_text(federal(salary_min=1.0, salary_max=2.0,
+                                                    years_required=2))
+
+
+def test_salary_enrich_records_the_kind():
+    import salary
+    rows = [lot(title="Support Engineer", url="https://l/1",
+                description_text="OTE Range: $200,000-$275,000")]
+    salary.enrich(rows)
+    assert rows[0]["salary_kind"] == "ote"
+
+
+# --- dismissal -------------------------------------------------------------
+
+def test_skipping_a_posting_hides_it_without_claiming_an_application(tmp_path):
+    import store
+    conn = store.connect(tmp_path / "t.db")
+    try:
+        store.upsert_many(conn, [posting(url="https://x/1")])
+        assert store.dismiss(conn, "https://x/1") is True
+        assert [r["url"] for r in store.dismissed(conn)] == ["https://x/1"]
+        # Dismissing is not applying.
+        assert store.applied(conn) == []
+        assert store.undismiss(conn, "https://x/1") is True
+        assert store.dismissed(conn) == []
+    finally:
+        conn.close()

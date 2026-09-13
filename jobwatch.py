@@ -123,6 +123,7 @@ def cmd_list(args) -> int:
         conn.close()
     if not args.include_applied:
         rows = [r for r in rows if not r.get("applied_at")]
+    rows = [r for r in rows if not r.get("dismissed_at")]
     if not args.include_closed:
         rows = filters.filter_open(rows)
     if args.us_remote:
@@ -172,6 +173,34 @@ def cmd_applied(args) -> int:
         conn.close()
 
 
+def cmd_skip(args) -> int:
+    """Mark a posting as not interested so it stops coming back."""
+    config.setup_logging(args.verbose)
+    conn = store.connect()
+    try:
+        if args.list:
+            rows = store.dismissed(conn)
+            if not rows:
+                print("Nothing dismissed.")
+                return 0
+            for row in rows:
+                print("  " + (row.get("dismissed_at") or "")[:10] + "  "
+                      + (row.get("company") or "") + " - " + (row.get("title") or ""))
+                print("      " + (row.get("url") or ""))
+            return 0
+        if not args.url:
+            print("Give a --url, or --list.", file=sys.stderr)
+            return 1
+        action = store.undismiss if args.undo else store.dismiss
+        if action(conn, args.url):
+            print(("Un-skipped " if args.undo else "Skipped: ") + args.url)
+            return 0
+        print("No stored posting with that url.", file=sys.stderr)
+        return 1
+    finally:
+        conn.close()
+
+
 def cmd_forms(args) -> int:
     """How much work is each application, easiest first."""
     config.setup_logging(args.verbose)
@@ -180,7 +209,7 @@ def cmd_forms(args) -> int:
         rows = store.recent(conn, days=args.days)
     finally:
         conn.close()
-    rows = [r for r in rows if not r.get("applied_at")]
+    rows = [r for r in rows if not r.get("applied_at") and not r.get("dismissed_at")]
     rows = filters.filter_open(rows)
     if args.us_remote:
         rows = filters.filter_us_remote(
@@ -354,6 +383,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="keep only US-remote postings (default: on; --no-us-remote disables)",
     )
     listing.set_defaults(func=cmd_list)
+
+    skip = sub.add_parser("skip", help="mark a posting as not interested")
+    skip.add_argument("--url")
+    skip.add_argument("--list", action="store_true")
+    skip.add_argument("--undo", action="store_true")
+    skip.set_defaults(func=cmd_skip)
 
     done = sub.add_parser("applied", help="mark a posting as applied to")
     done.add_argument("--url", help="the posting url, exactly as the digest shows it")

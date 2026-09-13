@@ -262,6 +262,13 @@ role whose description says "this role is remote-first", and drops its
 `Partner Solutions Engineer` whose description says "in-person (hybrid)... 3
 days per week in office".
 
+**Exclude** if the description declares a level the title hides. Cresta's
+"Solutions Engineer, AI Agent" opens *"As a Principal Solutions Engineer..."*
+and GitLab's "Forward Deployed Engineer" opens *"As a Staff..."* — two levels up,
+invisible to a title check. Matched only in the first 2,500 characters, where
+the "About the role" sentence lives, so a passing mention in the benefits text
+does not disqualify a posting.
+
 **Flag** (keep, but mark for a manual look):
 
 - `eligibility:` the description says "not eligible", "excluding" or "except"
@@ -472,7 +479,21 @@ like "authorized to work *without requiring sponsorship*" contains both
 "authorized to work" and "sponsorship", so the combined entry has to sit above
 the single-topic ones. An entry with an empty answer counts as unanswered.
 
+## Pay: base vs OTE
+
+An OTE figure includes variable pay and is not comparable to a base figure, so
+the digest never renders one as though it were the other — every salary carries
+`base` or `OTE`. The parser always knew the difference; the digest used to throw
+it away, which made a $220k–$275k OTE sales-comp role look like a $220k base
+offer.
+
+Postings asking for 5+ years are annotated `[N+ yrs]` so a role two levels up is
+visible before you open it.
+
 ## Applied tracking
+
+`python jobwatch.py skip --url <url>` marks a posting as not interested, which
+says nothing about having applied. `--list` and `--undo` work the same as below.
 
 `python jobwatch.py applied --url <url>` records that an application went in.
 Applied postings are hidden from `list` and from `forms`; `--include-applied`

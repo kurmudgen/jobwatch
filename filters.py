@@ -74,6 +74,18 @@ EXCLUDE_TITLE_KEYWORDS = [
     "supervisory",
 ]
 
+# A posting can hide its level in the body. Cresta's "Solutions Engineer, AI
+# Agent" opens "As a Principal Solutions Engineer, AI Agent you will...", and
+# GitLab's "Forward Deployed Engineer" opens "As a Staff...". The title-level
+# exclusions never see it. Matched only near the top of the description, where
+# the "About the role" sentence lives, so a passing mention further down does
+# not disqualify a posting.
+BODY_SENIORITY_RE = re.compile(
+    r"\bas\s+an?\s+(principal|staff|senior\s+director|director|vice\s+president|vp|head)\b",
+    re.I,
+)
+BODY_SENIORITY_WINDOW = 2500   # GitLab declares 'As a Staff...' at char 1787
+
 # "manager" alone is an exclusion, but this exact role is one we want.
 MANAGER_EXCEPTIONS = ["technical account manager"]
 
@@ -213,6 +225,24 @@ assert all(len(p.split()) >= 2 for p in STRONG_REMOTE_PHRASES), \
 def _has_strong_remote(text: str) -> bool:
     norm = normalize(text)
     return any(rx.search(norm) for rx in _STRONG_REMOTE_RES)
+
+
+def match_body_seniority(description: str) -> "str | None":
+    """The level a posting declares in its own opening paragraph."""
+    head = (description or "")[:BODY_SENIORITY_WINDOW]
+    match = BODY_SENIORITY_RE.search(head)
+    return match.group(1).lower() if match else None
+
+
+# Highest "N+ years" requirement a posting states, surfaced so a role two levels
+# up is visible before the application rather than after reading it.
+_YEARS_RE = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d{1,2}\s*)?years?", re.I)
+
+
+def required_years(description: str) -> "int | None":
+    values = [int(m.group(1)) for m in _YEARS_RE.finditer(description or "")]
+    values = [v for v in values if 1 <= v <= 25]
+    return max(values) if values else None
 
 
 def match_onsite(location: str, description: str) -> "str | None":
@@ -620,6 +650,11 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
         posting["reject_reason"] = "excluded term: " + excluded
         return None
 
+    body_level = match_body_seniority(description)
+    if body_level:
+        posting["reject_reason"] = 'body declares "as a ' + body_level + '"'
+        return None
+
     onsite = match_onsite(location, description)
     if onsite:
         posting["reject_reason"] = "on-site term without remote: " + onsite
@@ -629,6 +664,7 @@ def evaluate(posting: dict, match_description: bool = False) -> "dict | None":
     result["matched_keyword"] = keyword
     result["matched_in"] = matched_in
     result["flags"] = compute_flags(description)
+    result["years_required"] = required_years(description)
     result["tier"] = compute_tier(title, lottery=is_lottery,
                                   defense=bool(posting.get("defense")))
     result["remote"] = looks_remote(location, description, posting.get("remote"))

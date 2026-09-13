@@ -44,6 +44,11 @@ FIELDS = (
     # True when the company is tagged defense: true. Scopes the AI/ML title
     # list, which means something different in this sector.
     "defense",
+    # "base" or "ote" - an OTE figure is not comparable to a base figure and
+    # must not be shown as though it were.
+    "salary_kind",
+    # Highest "N+ years" the posting asks for.
+    "years_required",
 )
 
 

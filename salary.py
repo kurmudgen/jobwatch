@@ -196,5 +196,6 @@ def enrich(postings, only=None):
             continue
         posting["salary_min"] = parsed.get("catchall_min") or parsed["min"]
         posting["salary_max"] = parsed.get("catchall_max") or parsed["max"]
+        posting["salary_kind"] = parsed["kind"]
         posting["salary_note"] = describe(parsed)
     return postings

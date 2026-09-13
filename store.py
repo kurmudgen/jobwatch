@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS postings (
     applied_at       TEXT,
     lottery          INTEGER,
     defense          INTEGER,
+    salary_kind      TEXT,
+    years_required   INTEGER,
+    dismissed_at     TEXT,
     first_seen       TEXT NOT NULL,
     last_seen        TEXT NOT NULL,
     seen_count       INTEGER NOT NULL DEFAULT 1
@@ -50,6 +53,9 @@ LATER_COLUMNS = (
     ("applied_at", "TEXT"),
     ("lottery", "INTEGER"),
     ("defense", "INTEGER"),
+    ("salary_kind", "TEXT"),
+    ("years_required", "INTEGER"),
+    ("dismissed_at", "TEXT"),
 )
 
 
@@ -114,8 +120,9 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
             "INSERT INTO postings (url, source, company, title, location, remote, "
             "employment_type, posted_at, description_text, matched_keyword, "
             "matched_in, flags, salary_min, salary_max, closes_at, lottery, "
-            "defense, first_seen, last_seen, seen_count) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+            "defense, salary_kind, years_required, "
+            "first_seen, last_seen, seen_count) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
             (
                 url,
                 posting.get("source"),
@@ -134,6 +141,8 @@ def upsert_many(conn: sqlite3.Connection, postings: "list[dict]") -> "list[dict]
                 posting.get("closes_at"),
                 1 if posting.get("lottery") else 0,
                 1 if posting.get("defense") else 0,
+                posting.get("salary_kind"),
+                posting.get("years_required"),
                 now,
                 now,
             ),
@@ -191,6 +200,30 @@ def applied(conn: sqlite3.Connection) -> "list[dict]":
     rows = conn.execute(
         "SELECT * FROM postings WHERE applied_at IS NOT NULL ORDER BY applied_at DESC"
     ).fetchall()
+    return [_row_to_dict(r) for r in rows]
+
+
+def dismiss(conn: sqlite3.Connection, url: str, when: "str | None" = None) -> bool:
+    """Mark a posting as not interested. Unlike applied, it says nothing about
+    having sent anything - it just stops the posting coming back."""
+    cursor = conn.execute(
+        "UPDATE postings SET dismissed_at = ? WHERE url = ?", (when or utcnow(), url)
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def undismiss(conn: sqlite3.Connection, url: str) -> bool:
+    cursor = conn.execute(
+        "UPDATE postings SET dismissed_at = NULL WHERE url = ?", (url,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def dismissed(conn: sqlite3.Connection) -> "list[dict]":
+    rows = conn.execute(
+        "SELECT * FROM postings WHERE dismissed_at IS NOT NULL "
+        "ORDER BY dismissed_at DESC").fetchall()
     return [_row_to_dict(r) for r in rows]
 
 
